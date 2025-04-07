@@ -12,8 +12,8 @@ left: 10px;
 background: rgba(255,255,255,0.8);
 padding: 15px;
 border-radius: 5px;
-max-width: 300px;
-max-height: 90vh;
+max-width: 350px; /* Slightly wider for new controls */
+max-height: 95vh; /* Allow slightly more height */
 overflow-y: auto;
 z-index: 10; /* Ensure controls are on top */
 }
@@ -37,10 +37,22 @@ background: #45a049;
 .row {
 display: flex;
 gap: 10px;
+align-items: flex-end; /* Align items at the bottom */
 }
 .row label, .row input, .row select {
 width: auto;
 flex: 1;
+margin-bottom: 0; /* Remove bottom margin for items in row */
+}
+.row label {
+margin-bottom: 2px; /* Small space above input in row */
+display: block; /* Ensure label takes space */
+}
+.input-group label { /* Style labels for single inputs */
+  margin-bottom: 2px;
+}
+.input-group input {
+  margin-top: 0;
 }
 .checkbox-row {
 display: flex;
@@ -94,6 +106,19 @@ margin-top: 15px;
 border-top: 1px solid #eee;
 padding-top: 10px;
 }
+.info-inline {
+    font-size: 0.75em;
+    color: #666;
+    display: block;
+    margin-top: -5px; /* Pull closer to input */
+}
+h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
 </style>
 </head>
 <body>
@@ -101,40 +126,53 @@ padding-top: 10px;
 <div id="controls">
 <h2>Wireframe Designer</h2>
 
-      
-<label>Shape:</label>
-  <select id="shape">
-    <option value="cube">Cube</option>
-    <option value="sphere">Sphere</option>
-    <option value="cylinder">Cylinder</option>
-    <option value="cone">Cone</option>
-    <option value="torus">Torus</option>
-  </select>
-
-  <div class="row">
-    <div>
-      <label>Width:</label>
-      <input type="number" id="width" value="2" min="0.1" step="0.1">
-    </div>
-    <div>
-      <label>Height:</label>
-      <input type="number" id="height" value="2" min="0.1" step="0.1">
-    </div>
-    <div>
-      <label>Depth:</label>
-      <input type="number" id="depth" value="2" min="0.1" step="0.1">
-    </div>
+  <h3>Shape & Dimensions</h3>
+  <div class="input-group">
+      <label for="shape">Shape:</label>
+      <select id="shape">
+        <option value="cube">Cube</option>
+        <option value="sphere">Sphere</option>
+        <option value="cylinder">Cylinder</option>
+        <option value="cone">Cone</option>
+        <option value="torus">Torus</option>
+      </select>
   </div>
 
-  <label>Background Color:</label>
-  <input type="color" id="bgColor" value="#000000">
+  <div class="row">
+    <div class="input-group">
+      <label for="width">Width:</label>
+      <input type="number" id="width" value="4" min="0.1" step="0.1"> <!-- Default: 4 -->
+    </div>
+    <div class="input-group">
+      <label for="height">Height:</label>
+      <input type="number" id="height" value="2" min="0.1" step="0.1"> <!-- Default: 2 -->
+    </div>
+  </div>
+  <div class="input-group">
+    <label for="depth">Depth/Radius:</label>
+    <input type="number" id="depth" value="2" min="0.1" step="0.1"> <!-- Default: 2 -->
+  </div>
 
-  <label>Wireframe Color:</label>
-  <input type="color" id="wireColor" value="#00ff00">
+  <h3>Appearance</h3>
+  <div class="input-group">
+    <label for="bgColor">Background Color:</label>
+    <input type="color" id="bgColor" value="#000000">
+  </div>
+
+  <div class="input-group">
+    <label for="wireColor">Wireframe Color:</label>
+    <input type="color" id="wireColor" value="#00ff00">
+  </div>
+
+  <div class="input-group">
+     <label for="lineWidth">Line Thickness:</label>
+     <input type="number" id="lineWidth" value="1" min="1" step="1">
+     <span class="info-inline">(Only affects 'Edges Only' mode. May not work on all systems.)</span>
+  </div>
 
   <div class="checkbox-row">
     <input type="checkbox" id="edgesOnly" checked>
-    <label for="edgesOnly">Edges Only (faster)</label>
+    <label for="edgesOnly">Edges Only (faster, supports thickness)</label>
   </div>
 
   <div class="checkbox-row">
@@ -142,66 +180,98 @@ padding-top: 10px;
     <label for="showFaces">Show Faces</label>
   </div>
 
-  <label>Face Color:</label>
-  <input type="color" id="faceColor" value="#4444ff">
+  <div class="input-group">
+      <label for="faceColor">Face Color:</label>
+      <input type="color" id="faceColor" value="#4444ff" disabled> <!-- Initially disabled -->
+  </div>
 
-  <label>Face Opacity:</label>
-  <input type="range" id="faceOpacity" min="0" max="1" step="0.1" value="0.5">
+  <div class="input-group">
+      <label for="faceOpacity">Face Opacity:</label>
+      <input type="range" id="faceOpacity" min="0" max="1" step="0.1" value="0.5" disabled> <!-- Initially disabled -->
+  </div>
 
+   <h3>Position Offset</h3>
+    <div class="row">
+       <div class="input-group">
+           <label for="posX">X:</label>
+           <input type="number" id="posX" value="0" step="0.1"> <!-- Default: 0 -->
+       </div>
+        <div class="input-group">
+           <label for="posY">Y:</label>
+           <input type="number" id="posY" value="0" step="0.1"> <!-- Default: 0 -->
+       </div>
+    </div>
+      <div class="row">
+        <div class="input-group">
+           <label for="posZ">Z:</label>
+           <input type="number" id="posZ" value="0" step="0.1"> <!-- Default: 0 -->
+       </div>
+    </div>
+
+  <h3>Animation</h3>
   <label>Output Resolution:</label>
   <div class="row">
-    <div>
-      <label>Width:</label>
-      <input type="number" id="outputWidth" value="400" min="100" step="1">
+    <div class="input-group">
+      <label for="outputWidth">Width:</label>
+      <input type="number" id="outputWidth" value="832" min="100" step="1"> <!-- Default: 832 -->
     </div>
-    <div>
-      <label>Height:</label>
-      <input type="number" id="outputHeight" value="300" min="100" step="1">
+    <div class="input-group">
+      <label for="outputHeight">Height:</label>
+      <input type="number" id="outputHeight" value="480" min="100" step="1"> <!-- Default: 480 -->
     </div>
   </div>
 
+  <label>Rotation X (Degrees):</label>
   <div class="row">
-    <div>
-      <label>Start Angle X:</label>
-      <input type="number" id="startAngleX" value="0" min="0" max="360" step="5">
+    <div class="input-group">
+      <label for="startAngleX">Start:</label>
+      <input type="number" id="startAngleX" value="-10" step="1"> <!-- Default: -10 -->
     </div>
-    <div>
-      <label>End Angle X:</label>
-      <input type="number" id="endAngleX" value="360" min="0" max="360" step="5">
+    <div class="input-group">
+      <label for="endAngleX">End:</label>
+      <input type="number" id="endAngleX" value="10" step="1"> <!-- Default: 10 -->
     </div>
   </div>
 
+  <label>Rotation Y (Degrees):</label>
   <div class="row">
-    <div>
-      <label>Start Angle Y:</label>
-      <input type="number" id="startAngleY" value="0" min="0" max="360" step="5">
+    <div class="input-group">
+      <label for="startAngleY">Start:</label>
+      <input type="number" id="startAngleY" value="-10" step="1"> <!-- Default: -10 -->
     </div>
-    <div>
-      <label>End Angle Y:</label>
-      <input type="number" id="endAngleY" value="360" min="0" max="360" step="5">
+    <div class="input-group">
+      <label for="endAngleY">End:</label>
+      <input type="number" id="endAngleY" value="10" step="1"> <!-- Default: 10 -->
     </div>
   </div>
 
-  <label>Frame Count:</label>
-  <input type="number" id="frameCount" value="30" min="2" max="180" step="1">
+  <div class="input-group">
+    <label for="frameCount">Frame Count:</label>
+    <input type="number" id="frameCount" value="81" min="2" max="360" step="1"> <!-- Default: 81, Max increased -->
+  </div>
 
-  <label>Frame Delay (ms):</label>
-  <input type="number" id="frameDelay" value="100" min="20" max="1000" step="10">
+  <div class="input-group">
+    <label for="frameDelay">Frame Delay (ms):</label>
+    <input type="number" id="frameDelay" value="100" min="10" max="1000" step="1"> <!-- Min/Step adjusted -->
+  </div>
 
-   <label>Output Format:</label>
-   <select id="outputFormat" disabled> <!-- Disabled WebP for now -->
-     <option value="gif" selected>GIF</option>
-     <!-- <option value="webp">WebP (Not Implemented)</option> -->
-   </select>
+   <div class="input-group">
+       <label for="outputFormat">Output Format:</label>
+       <select id="outputFormat" disabled> <!-- Disabled WebP for now -->
+         <option value="gif" selected>GIF</option>
+         <!-- <option value="webp">WebP (Not Implemented)</option> -->
+       </select>
+   </div>
 
-
+  <h3>Actions</h3>
   <button id="previewBtn">Preview Animation</button>
   <button id="renderBtn">Create GIF Animation</button>
   <div id="progressInfo">Ready</div>
   <div id="progressBar"><div id="progressFill"></div></div>
 
   <div class="info">
-      <strong>Note:</strong> If GIF creation fails, ensure you are running this page from a local web server (e.g., Python's `http.server` or VS Code Live Server), not directly via a `file:///` URL. This is needed for the GIF worker script to load correctly.
+      <strong>Note:</strong> If GIF creation fails, ensure you are running this page from a local web server (e.g., Python's `http.server` or VS Code Live Server), not directly via a `file:///` URL. This is needed for the GIF worker script to load correctly. <br>
+      <strong>Line Thickness:</strong> Thickness > 1 may not render correctly on all browsers/GPUs.
   </div>
 </div>
 
@@ -229,10 +299,14 @@ const heightInput = document.getElementById('height');
 const depthInput = document.getElementById('depth');
 const bgColorInput = document.getElementById('bgColor');
 const wireColorInput = document.getElementById('wireColor');
+const lineWidthInput = document.getElementById('lineWidth'); // New
 const edgesOnlyCheckbox = document.getElementById('edgesOnly');
 const showFacesCheckbox = document.getElementById('showFaces');
 const faceColorInput = document.getElementById('faceColor');
 const faceOpacityInput = document.getElementById('faceOpacity');
+const posXInput = document.getElementById('posX'); // New
+const posYInput = document.getElementById('posY'); // New
+const posZInput = document.getElementById('posZ'); // New
 const outputWidthInput = document.getElementById('outputWidth');
 const outputHeightInput = document.getElementById('outputHeight');
 const startAngleXInput = document.getElementById('startAngleX');
@@ -255,427 +329,551 @@ const downloadBtn = document.getElementById('downloadBtn');
 
 // --- THREE.js Setup ---
 let renderer, scene, camera;
-let wireframeMesh, faceMesh, edges;
+let objectGroup; // Group to hold all meshes for easy transformation
+let wireframeMesh, faceMesh, edges; // References to specific meshes
 let isAnimatingPreview = false;
 let previewAnimationId;
 let capturedFrames = [];
 let isRendering = false;
 
 function initScene() {
-renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-scene = new THREE.Scene();
-camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-container.appendChild(renderer.domElement);
-renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-camera.position.z = 5;
+    camera.position.z = 5; // Adjust camera Z based on new default size if needed
+    // Let's pull back the camera slightly to better fit the default 4x2x2 cube
+    camera.position.z = 6;
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(1, 1, 1);
-scene.add(directionalLight);
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
 
-createGeometryAndUpdateMeshes();
-updateColors(); // Initial color update
+    // Create the main group
+    objectGroup = new THREE.Group();
+    scene.add(objectGroup);
 
-// --- Event Listeners ---
-window.addEventListener('resize', onWindowResize);
-shapeSelect.addEventListener('change', createGeometryAndUpdateMeshes);
-widthInput.addEventListener('change', createGeometryAndUpdateMeshes);
-heightInput.addEventListener('change', createGeometryAndUpdateMeshes);
-depthInput.addEventListener('change', createGeometryAndUpdateMeshes);
-bgColorInput.addEventListener('change', updateColors);
-wireColorInput.addEventListener('change', updateColors);
-faceColorInput.addEventListener('change', updateColors);
-faceOpacityInput.addEventListener('input', updateColors); // Use 'input' for range sliders
-edgesOnlyCheckbox.addEventListener('change', updateMeshVisibility);
-showFacesCheckbox.addEventListener('change', updateMeshVisibility);
-previewBtn.addEventListener('click', togglePreviewAnimation);
-renderBtn.addEventListener('click', startRenderAnimation);
-closePreviewBtn.addEventListener('click', closePreview);
-downloadBtn.addEventListener('click', downloadAnimation);
+    createGeometryAndUpdateMeshes(); // Create initial shape with new defaults
+    updateColorsAndAppearance(); // Initial appearance update
+    updatePosition(); // Set initial position (should be 0,0,0)
 
-// Initial render
-animate();
+    // --- Event Listeners ---
+    window.addEventListener('resize', onWindowResize);
+    shapeSelect.addEventListener('change', createGeometryAndUpdateMeshes);
+    widthInput.addEventListener('change', createGeometryAndUpdateMeshes);
+    heightInput.addEventListener('change', createGeometryAndUpdateMeshes);
+    depthInput.addEventListener('change', createGeometryAndUpdateMeshes);
+    bgColorInput.addEventListener('change', updateColorsAndAppearance);
+    wireColorInput.addEventListener('change', updateColorsAndAppearance);
+    lineWidthInput.addEventListener('change', updateColorsAndAppearance); // Handles line width change
+    faceColorInput.addEventListener('input', updateColorsAndAppearance); // Use input for live color update
+    faceOpacityInput.addEventListener('input', updateColorsAndAppearance); // Use 'input' for range sliders
+    edgesOnlyCheckbox.addEventListener('change', updateMeshVisibility);
+    showFacesCheckbox.addEventListener('change', () => { // Combined listener
+        toggleFaceControls();
+        updateMeshVisibility(); // Update visibility first
+        updateColorsAndAppearance(); // Re-apply colors/opacity if shown/hidden
+    });
+    posXInput.addEventListener('input', updatePosition); // Use 'input' for responsiveness
+    posYInput.addEventListener('input', updatePosition); // New
+    posZInput.addEventListener('input', updatePosition); // New
+    previewBtn.addEventListener('click', togglePreviewAnimation);
+    renderBtn.addEventListener('click', startRenderAnimation);
+    closePreviewBtn.addEventListener('click', closePreview);
+    downloadBtn.addEventListener('click', downloadAnimation);
+
+    toggleFaceControls(); // Set initial state of face controls
+    animate(); // Start render loop
 }
 
 function createGeometryAndUpdateMeshes() {
-if (isRendering) return; // Don't change geometry while rendering
-// Stop preview if running
-if (isAnimatingPreview) {
-togglePreviewAnimation();
-}
+    if (isRendering) return; // Don't change geometry while rendering
+    if (isAnimatingPreview) togglePreviewAnimation(); // Stop preview
 
-// Clear existing meshes from the scene first
-if (wireframeMesh) scene.remove(wireframeMesh);
-if (faceMesh) scene.remove(faceMesh);
-if (edges) scene.remove(edges);
+    // Clear existing meshes from the group first
+    while (objectGroup.children.length > 0) {
+        const child = objectGroup.children[0];
+        objectGroup.remove(child);
+        // Dispose geometry/material if necessary (good practice)
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+            if (Array.isArray(child.material)) {
+                child.material.forEach(m => m.dispose());
+            } else {
+                child.material.dispose();
+            }
+        }
+    }
+    wireframeMesh = null; // Clear references
+    faceMesh = null;
+    edges = null;
 
-const shape = shapeSelect.value;
-const width = Math.max(0.1, parseFloat(widthInput.value));
-const height = Math.max(0.1, parseFloat(heightInput.value));
-const depth = Math.max(0.1, parseFloat(depthInput.value));
 
-let geometry;
-const segments = 32; // Increase for smoother sphere/cylinder etc.
+    const shape = shapeSelect.value;
+    const width = Math.max(0.1, parseFloat(widthInput.value));
+    const height = Math.max(0.1, parseFloat(heightInput.value));
+    const depth = Math.max(0.1, parseFloat(depthInput.value)); // Use depth/radius
 
-switch(shape) {
-case 'sphere':
-geometry = new THREE.SphereGeometry(width / 2, segments, Math.max(3, Math.round(segments/2)));
-break;
-case 'cylinder':
-geometry = new THREE.CylinderGeometry(width / 2, width / 2, height, segments);
-break;
-case 'cone':
-geometry = new THREE.ConeGeometry(width / 2, height, segments);
-break;
-case 'torus':
-// Ensure tube radius is smaller than torus radius
-const torusRadius = width / 2;
-const tubeRadius = Math.min(torusRadius * 0.9, height / 2); // Adjust tube based on height, capped
-geometry = new THREE.TorusGeometry(torusRadius, tubeRadius, Math.max(3, Math.round(segments/2)), segments);
-break;
-case 'cube':
-default:
-geometry = new THREE.BoxGeometry(width, height, depth);
-}
+    let geometry;
+    const segments = 32; // Increase for smoother sphere/cylinder etc.
 
-// --- Create all potential mesh types ---
-// 1. Wireframe (all lines)
-const wireMaterial = new THREE.MeshBasicMaterial({
-color: new THREE.Color(wireColorInput.value),
-wireframe: true
-});
-wireframeMesh = new THREE.Mesh(geometry, wireMaterial);
+    // Adjust label for depth/radius based on shape
+    const depthLabel = document.querySelector('label[for="depth"]');
+    if (shape === 'sphere') {
+       depthLabel.textContent = 'Radius:'; // Sphere only needs one radius (width)
+    } else if (shape === 'torus') {
+       depthLabel.textContent = 'Tube Radius:'; // Torus uses width for main radius, depth for tube
+    } else if (shape === 'cylinder' || shape === 'cone') {
+        depthLabel.textContent = 'Radius:'; // Cylinder/Cone use width for radius
+    } else {
+        depthLabel.textContent = 'Depth:'; // Cube uses depth
+    }
 
-// 2. Edges only
-const edgesGeometry = new THREE.EdgesGeometry(geometry);
-const lineMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(wireColorInput.value) });
-edges = new THREE.LineSegments(edgesGeometry, lineMaterial);
 
-// 3. Solid Faces
-const faceMaterial = new THREE.MeshStandardMaterial({ // Use Standard for better lighting
-color: new THREE.Color(faceColorInput.value),
-transparent: true,
-opacity: parseFloat(faceOpacityInput.value),
-polygonOffset: true, // Prevent z-fighting with wireframe/edges
-polygonOffsetFactor: 1,
-polygonOffsetUnits: 1,
-side: THREE.DoubleSide // Render both sides
-});
-faceMesh = new THREE.Mesh(geometry, faceMaterial);
+    switch(shape) {
+        case 'sphere':
+            // Sphere radius is controlled by width input
+            geometry = new THREE.SphereGeometry(width / 2, segments, Math.max(3, Math.round(segments/2)));
+            break;
+        case 'cylinder':
+            // Cylinder radius by width, height by height
+            geometry = new THREE.CylinderGeometry(width / 2, width / 2, height, segments);
+            break;
+        case 'cone':
+             // Cone radius by width, height by height
+            geometry = new THREE.ConeGeometry(width / 2, height, segments);
+            break;
+        case 'torus':
+            // Torus main radius by width, tube radius by depth
+            const torusRadius = width / 2;
+            const tubeRadius = Math.max(0.01, Math.min(torusRadius * 0.99, depth / 2)); // Ensure tube is smaller
+            geometry = new THREE.TorusGeometry(torusRadius, tubeRadius, Math.max(3, Math.round(segments/2)), segments);
+            break;
+        case 'cube':
+        default:
+            geometry = new THREE.BoxGeometry(width, height, depth);
+    }
 
-// Add meshes to scene (visibility controlled separately)
-scene.add(wireframeMesh);
-scene.add(edges);
-scene.add(faceMesh);
+    // --- Create all potential mesh types ---
+    // 1. Wireframe (all lines) - Material updated in updateColors
+    const wireMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff, // Placeholder, set in updateColors
+        wireframe: true
+    });
+    wireframeMesh = new THREE.Mesh(geometry, wireMaterial);
 
-updateMeshVisibility(); // Set initial visibility based on checkboxes
-updateColors(); // Apply current colors
+    // 2. Edges only - Material updated in updateColors
+    const edgesGeometry = new THREE.EdgesGeometry(geometry);
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0xffffff, // Placeholder
+        linewidth: 1 // Placeholder, updated in updateColorsAndAppearance
+    });
+    edges = new THREE.LineSegments(edgesGeometry, lineMaterial);
+
+    // 3. Solid Faces - Material updated in updateColors
+    const faceMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff, // Placeholder
+        transparent: true,
+        opacity: 1, // Placeholder
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+        side: THREE.DoubleSide
+    });
+    faceMesh = new THREE.Mesh(geometry, faceMaterial);
+
+    // Add meshes to the group (visibility controlled separately)
+    objectGroup.add(wireframeMesh);
+    objectGroup.add(edges);
+    objectGroup.add(faceMesh);
+
+    updateMeshVisibility(); // Set initial visibility based on checkboxes
+    updateColorsAndAppearance(); // Apply current colors/thickness
+    updatePosition(); // Re-apply position
 }
 
 function updateMeshVisibility() {
-if (!wireframeMesh || !edges || !faceMesh) return; // Meshes not ready
+    if (!wireframeMesh || !edges || !faceMesh || !objectGroup) return; // Meshes not ready
 
-const showFaces = showFacesCheckbox.checked;
-const edgesOnly = edgesOnlyCheckbox.checked;
+    const showFaces = showFacesCheckbox.checked;
+    const edgesOnly = edgesOnlyCheckbox.checked;
 
-wireframeMesh.visible = !edgesOnly; // Show full wireframe only if 'edgesOnly' is OFF
-edges.visible = edgesOnly; // Show edges only if 'edgesOnly' is ON
-faceMesh.visible = showFaces; // Show faces based on its checkbox
+    wireframeMesh.visible = !edgesOnly; // Show full wireframe only if 'edgesOnly' is OFF
+    edges.visible = edgesOnly;         // Show edges only if 'edgesOnly' is ON
+    faceMesh.visible = showFaces;     // Show faces based on its checkbox
+
+    // Disable line thickness input if not in edgesOnly mode
+    lineWidthInput.disabled = !edgesOnly;
 }
 
-function updateColors() {
-if (isRendering) return;
+function updateColorsAndAppearance() {
+    if (isRendering) return;
 
-scene.background = new THREE.Color(bgColorInput.value);
+    scene.background = new THREE.Color(bgColorInput.value);
 
-if (wireframeMesh) {
-wireframeMesh.material.color.set(wireColorInput.value);
+    const wireColor = new THREE.Color(wireColorInput.value);
+    const faceColor = new THREE.Color(faceColorInput.value);
+    const faceOpacity = parseFloat(faceOpacityInput.value);
+    const lineWidth = Math.max(1, parseFloat(lineWidthInput.value || 1)); // Ensure positive integer >= 1
+
+    if (wireframeMesh && wireframeMesh.material) {
+        wireframeMesh.material.color.set(wireColor);
+    }
+    if (edges && edges.material) {
+        edges.material.color.set(wireColor);
+        // Attempt to set line width - effectiveness depends on browser/GPU
+        edges.material.linewidth = lineWidth;
+        edges.material.needsUpdate = true; // May help, though often ignored for linewidth
+    }
+    if (faceMesh && faceMesh.material) {
+        faceMesh.material.color.set(faceColor);
+        faceMesh.material.opacity = faceOpacity;
+        faceMesh.material.needsUpdate = true; // Important for material changes
+    }
 }
-if (edges) {
-edges.material.color.set(wireColorInput.value);
+
+function updatePosition() {
+    if (isRendering || !objectGroup) return;
+    objectGroup.position.set(
+        parseFloat(posXInput.value) || 0,
+        parseFloat(posYInput.value) || 0,
+        parseFloat(posZInput.value) || 0
+    );
 }
-if (faceMesh) {
-faceMesh.material.color.set(faceColorInput.value);
-faceMesh.material.opacity = parseFloat(faceOpacityInput.value);
+
+function toggleFaceControls() {
+    const disabled = !showFacesCheckbox.checked;
+    faceColorInput.disabled = disabled;
+    faceOpacityInput.disabled = disabled;
 }
-}
+
 
 function onWindowResize() {
-// Adjust camera aspect ratio and renderer size to fill window
-camera.aspect = window.innerWidth / window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate() {
-// This is the main render loop, runs continuously
-previewAnimationId = requestAnimationFrame(animate); // Keep the loop going
-
-// Only update rotation if preview animation is NOT running
-if (!isAnimatingPreview && !isRendering) {
-// Optional: Add subtle idle rotation if desired
-// if (edges && edges.visible) edges.rotation.y += 0.001;
-// if (wireframeMesh && wireframeMesh.visible) wireframeMesh.rotation.y += 0.001;
-// if (faceMesh && faceMesh.visible) faceMesh.rotation.y += 0.001;
-}
-
-renderer.render(scene, camera);
+    previewAnimationId = requestAnimationFrame(animate); // Keep the loop going
+    renderer.render(scene, camera);
 }
 
 function togglePreviewAnimation() {
-if (isRendering) return; // Don't interfere with rendering
+    if (isRendering) return; // Don't interfere with rendering
 
-if (isAnimatingPreview) {
-// Stop preview
-isAnimatingPreview = false;
-previewBtn.textContent = 'Preview Animation';
-// Reset rotation to initial state if desired, or leave it where it stopped
-setMeshRotation(0); // Reset to frame 0 state
-} else {
-// Start preview
-isAnimatingPreview = true;
-previewBtn.textContent = 'Stop Preview';
-let frame = 0;
-const frameCount = parseInt(frameCountInput.value) || 30;
+    if (isAnimatingPreview) {
+        // Stop preview
+        isAnimatingPreview = false;
+        previewBtn.textContent = 'Preview Animation';
+        // Reset rotation to start angle (progress = 0)
+        setObjectRotation(0);
+    } else {
+        // Start preview
+        isAnimatingPreview = true;
+        previewBtn.textContent = 'Stop Preview';
+        let frame = 0;
+        // Use Math.max to ensure frameCount is at least 1 to avoid division by zero
+        const frameCount = Math.max(1, parseInt(frameCountInput.value) || 30);
 
-function animatePreviewFrame() {
-if (!isAnimatingPreview) return; // Stop if toggled off
+        function animatePreviewFrame() {
+            if (!isAnimatingPreview) return; // Stop if toggled off
 
-const progress = frame / frameCount;
-setMeshRotation(progress);
+            // Ensure progress doesn't exceed 1 if frameCount is 1
+            const progress = (frameCount <= 1) ? 0 : frame / (frameCount - 1);
+            setObjectRotation(progress);
 
-frame = (frame + 1) % frameCount;
-requestAnimationFrame(animatePreviewFrame); // Loop the preview
+            frame = (frame + 1) % frameCount; // Loop frames
+            requestAnimationFrame(animatePreviewFrame); // Loop the preview
+        }
+        animatePreviewFrame(); // Start the preview animation loop
+    }
 }
-animatePreviewFrame(); // Start the preview animation loop
-}
-}
 
-function setMeshRotation(progress) {
-const startAngleX = (parseFloat(startAngleXInput.value) * Math.PI) / 180;
-const endAngleX = (parseFloat(endAngleXInput.value) * Math.PI) / 180;
-const startAngleY = (parseFloat(startAngleYInput.value) * Math.PI) / 180;
-const endAngleY = (parseFloat(endAngleYInput.value) * Math.PI) / 180;
+function setObjectRotation(progress) {
+    if (!objectGroup) return;
 
-const currentAngleX = startAngleX + (endAngleX - startAngleX) * progress;
-const currentAngleY = startAngleY + (endAngleY - startAngleY) * progress;
+    // Read angles correctly (handle potential NaN)
+    const startAngleXDeg = parseFloat(startAngleXInput.value) || 0;
+    const endAngleXDeg = parseFloat(endAngleXInput.value) || 0;
+    const startAngleYDeg = parseFloat(startAngleYInput.value) || 0;
+    const endAngleYDeg = parseFloat(endAngleYInput.value) || 0;
 
-// Apply rotation to all potentially visible meshes
-if (wireframeMesh) {
-wireframeMesh.rotation.x = currentAngleX;
-wireframeMesh.rotation.y = currentAngleY;
-}
-if (edges) {
-edges.rotation.x = currentAngleX;
-edges.rotation.y = currentAngleY;
-}
-if (faceMesh) {
-faceMesh.rotation.x = currentAngleX;
-faceMesh.rotation.y = currentAngleY;
-}
+    // Convert degrees to radians
+    const startAngleX = THREE.MathUtils.degToRad(startAngleXDeg);
+    const endAngleX = THREE.MathUtils.degToRad(endAngleXDeg);
+    const startAngleY = THREE.MathUtils.degToRad(startAngleYDeg);
+    const endAngleY = THREE.MathUtils.degToRad(endAngleYDeg);
+
+
+    // Interpolate angles using lerp for cleaner code
+    const currentAngleX = THREE.MathUtils.lerp(startAngleX, endAngleX, progress);
+    const currentAngleY = THREE.MathUtils.lerp(startAngleY, endAngleY, progress);
+
+    // Apply rotation to the group
+    objectGroup.rotation.x = currentAngleX;
+    objectGroup.rotation.y = currentAngleY;
+    objectGroup.rotation.z = 0; // Keep Z rotation at 0 for now
 }
 
 
 function startRenderAnimation() {
-if (isRendering) return; // Prevent multiple renders
-isRendering = true;
+    if (isRendering) return; // Prevent multiple renders
+    isRendering = true;
 
-// Stop preview if running
-if (isAnimatingPreview) {
-togglePreviewAnimation();
-}
-closePreview(); // Close any previous preview
+    if (isAnimatingPreview) togglePreviewAnimation(); // Stop preview
+    closePreview(); // Close any previous preview
 
-renderBtn.disabled = true;
-previewBtn.disabled = true;
-controlsPanel.style.opacity = 0.7; // Dim controls during render
+    renderBtn.disabled = true;
+    previewBtn.disabled = true;
+    controlsPanel.style.opacity = 0.7; // Dim controls
 
-const frameCount = parseInt(frameCountInput.value);
-const outputWidth = parseInt(outputWidthInput.value);
-const outputHeight = parseInt(outputHeightInput.value);
-const outputFormat = 'gif'; // Hardcoded to GIF for now
-const frameDelay = parseInt(frameDelayInput.value);
+    const frameCount = Math.max(2, parseInt(frameCountInput.value)); // Ensure minimum frames for animation
+    const outputWidth = parseInt(outputWidthInput.value);
+    const outputHeight = parseInt(outputHeightInput.value);
+    const frameDelay = parseInt(frameDelayInput.value);
 
-capturedFrames = []; // Clear previous frames
+    capturedFrames = []; // Clear previous frames
 
-// --- Prepare Renderer for Capture ---
-const originalSize = new THREE.Vector2();
-renderer.getSize(originalSize); // Store original size
-const originalAspect = camera.aspect; // Store original aspect
+    // --- Prepare Renderer for Capture ---
+    const originalSize = new THREE.Vector2();
+    renderer.getSize(originalSize);
+    const originalAspect = camera.aspect;
 
-renderer.setSize(outputWidth, outputHeight);
-camera.aspect = outputWidth / outputHeight;
-camera.updateProjectionMatrix();
+    // Temporarily resize renderer and camera for capture
+    renderer.setSize(outputWidth, outputHeight, false); // Don't update style
+    camera.aspect = outputWidth / outputHeight;
+    camera.updateProjectionMatrix();
 
-progressInfo.textContent = 'Initializing...';
-progressFill.style.width = '0%';
-progressFill.textContent = '';
+    progressInfo.textContent = 'Initializing...';
+    progressFill.style.width = '0%';
+    progressFill.textContent = '';
 
+    // --- Frame Capture Loop ---
+    let frame = 0;
+    function captureFrame() {
+        if (frame < frameCount && isRendering) { // Check isRendering flag
+            // Calculate progress from 0 to 1 inclusive over frameCount steps
+            const progress = (frameCount <= 1) ? 0 : frame / (frameCount - 1);
+            setObjectRotation(progress); // Set group rotation for the frame
 
-// --- Frame Capture Loop ---
-let frame = 0;
-function captureFrame() {
-if (frame < frameCount) {
-const progress = frame / frameCount;
-setMeshRotation(progress); // Set rotation for the frame
+            renderer.render(scene, camera); // Render the frame
 
-renderer.render(scene, camera); // Render the frame
+            try {
+                const frameDataUrl = renderer.domElement.toDataURL('image/png');
+                capturedFrames.push(frameDataUrl);
+            } catch (e) {
+                console.error("Error capturing frame:", e);
+                progressInfo.textContent = `Error capturing frame ${frame + 1}! Check console.`;
+                resetUIState(originalSize, originalAspect); // Pass original state back
+                return; // Stop rendering
+            }
 
-// Capture the frame data URL
-try {
-const frameDataUrl = renderer.domElement.toDataURL('image/png');
-capturedFrames.push(frameDataUrl);
-} catch (e) {
-console.error("Error capturing frame:", e);
-progressInfo.textContent = `Error capturing frame ${frame + 1}! Check console.`;
-resetUIState();
-return; // Stop rendering on capture error
-}
+            const percent = Math.round(((frame + 1) / frameCount) * 100);
+            progressInfo.textContent = `Capturing frame ${frame + 1} / ${frameCount}`;
+            progressFill.style.width = `${percent}%`;
+            progressFill.textContent = `${percent}%`;
 
+            frame++;
+            setTimeout(captureFrame, 10); // Schedule next capture
+        } else if (isRendering) { // Check isRendering before proceeding
+            // --- Frames Captured, Start Encoding ---
+             if (capturedFrames.length === frameCount) {
+                 createGifAnimation(capturedFrames, frameDelay, outputWidth, outputHeight, originalSize, originalAspect);
+             } else {
+                 // Render was likely cancelled or didn't finish capture
+                  progressInfo.textContent = 'Capture incomplete. Aborting.';
+                  resetUIState(originalSize, originalAspect);
+             }
+        } else {
+             // Render was cancelled during capture loop
+             progressInfo.textContent = 'Render cancelled during capture.';
+             resetUIState(originalSize, originalAspect);
+        }
+    }
 
-// Update progress
-const percent = Math.round(((frame + 1) / frameCount) * 100);
-progressInfo.textContent = `Capturing frame ${frame + 1} / ${frameCount}`;
-progressFill.style.width = `${percent}%`;
-progressFill.textContent = `${percent}%`;
-
-
-frame++;
-// Use setTimeout for less blocking capture loop
-setTimeout(captureFrame, 10); // Small delay between captures
-} else {
-// --- Frames Captured, Start Encoding ---
-createGifAnimation(capturedFrames, frameDelay, outputWidth, outputHeight);
-}
-}
-
-// Start the capture process after a brief moment to allow UI update
-setTimeout(captureFrame, 50);
-}
-
-function createGifAnimation(frames, delay, width, height) {
-progressInfo.textContent = 'Encoding GIF... (can take time)';
-progressFill.style.width = '0%';
-progressFill.textContent = '0%';
-
-const gif = new GIF({
-workers: Math.max(1, navigator.hardwareConcurrency - 1 || 2), // Use available cores (minus 1) or default to 2
-quality: 10, // Lower quality means faster encoding & smaller file
-width: width,
-height: height,
-workerScript: 'gif.worker.js',
-background: bgColorInput.value // Set background color for transparency handling
-});
-
-let framesAdded = 0;
-let loadErrors = 0;
-
-frames.forEach((frameDataUrl, index) => {
-const img = new Image();
-img.onload = () => {
-if (!isRendering) return; // Check if rendering was cancelled
-gif.addFrame(img, { delay: delay });
-framesAdded++;
-// Only start rendering when ALL frames are successfully added
-if (framesAdded === frames.length) {
-progressInfo.textContent = `All frames loaded (${framesAdded}). Rendering GIF...`;
-gif.render();
-} else {
-// Optional: update progress based on frames added
-const percent = Math.round((framesAdded / frames.length) * 50); // Show load progress up to 50%
-progressFill.style.width = `${percent}%`;
-progressFill.textContent = `${percent}%`;
-progressInfo.textContent = `Loading frame ${framesAdded}/${frames.length}`;
-}
-};
-img.onerror = () => {
-if (!isRendering) return;
-console.error(`Failed to load image data for frame ${index}`);
-loadErrors++;
-// Decide how to handle errors - here we stop if any frame fails
-progressInfo.textContent = `Error loading frame ${index+1}. Aborting.`;
-resetUIState();
-isRendering = false; // Force stop
-};
-img.src = frameDataUrl;
-});
-
-gif.on('progress', p => {
-if (!isRendering) return;
-// GIF rendering progress (0 to 1) - map to 50-100% of the bar
-const percent = Math.round(50 + (p * 50));
-progressFill.style.width = `${percent}%`;
-progressFill.textContent = `${percent}%`;
-progressInfo.textContent = `Rendering GIF: ${Math.round(p * 100)}%`;
-});
-
-gif.on('finished', blob => {
-if (!isRendering) return; // Check if cancelled during final stage
-progressInfo.textContent = 'GIF Animation complete!';
-progressFill.style.width = '100%';
-progressFill.textContent = '100%';
-
-const url = URL.createObjectURL(blob);
-previewImage.src = url;
-previewImage.dataset.blobUrl = url; // Store for download
-previewImage.dataset.format = 'gif';
-previewDiv.style.display = 'block';
-
-resetUIState();
-});
+    setTimeout(captureFrame, 50); // Start capture after UI update
 }
 
-function resetUIState() {
-// Restore renderer size and aspect ratio
-const originalSize = new THREE.Vector2();
-renderer.getSize(originalSize);
-if(originalSize.x !== window.innerWidth || originalSize.y !== window.innerHeight) {
-onWindowResize(); // This resets to current window size
+function createGifAnimation(frames, delay, width, height, originalSize, originalAspect) {
+    progressInfo.textContent = 'Encoding GIF... (can take time)';
+    progressFill.style.width = '0%'; // Reset for encoding phase
+    progressFill.textContent = '0%';
+
+    const gif = new GIF({
+        workers: Math.max(1, navigator.hardwareConcurrency - 1 || 2),
+        quality: 10, // Lower quality means faster encoding & smaller file. Higher is better quality.
+        width: width,
+        height: height,
+        workerScript: 'gif.worker.js',
+        background: bgColorInput.value // Use selected background color
+    });
+
+    let framesAdded = 0;
+    let loadErrors = 0;
+
+    frames.forEach((frameDataUrl, index) => {
+        if (!isRendering) return; // Check if cancelled
+
+        const img = new Image();
+        img.onload = () => {
+            if (!isRendering) return;
+            try {
+                 gif.addFrame(img, { delay: delay });
+                 framesAdded++;
+            } catch (e) {
+                console.error(`Error adding frame ${index} to GIF:`, e);
+                loadErrors++;
+                 if (isRendering) { // Avoid multiple resets
+                    progressInfo.textContent = `Error adding frame ${index+1} to GIF. Aborting.`;
+                    gif.abort();
+                    resetUIState(originalSize, originalAspect);
+                 }
+                return; // Stop processing this frame
+            }
+
+
+            if (loadErrors === 0 && framesAdded === frames.length) {
+                progressInfo.textContent = `All frames loaded (${framesAdded}). Rendering GIF...`;
+                gif.render();
+            } else if (loadErrors === 0) {
+                const percent = Math.round((framesAdded / frames.length) * 50); // Load progress up to 50%
+                progressFill.style.width = `${percent}%`;
+                progressFill.textContent = `${percent}%`;
+                progressInfo.textContent = `Loading frame ${framesAdded}/${frames.length}`;
+            }
+        };
+        img.onerror = () => {
+            if (!isRendering) return;
+            console.error(`Failed to load image data for frame ${index}`);
+            loadErrors++;
+            progressInfo.textContent = `Error loading frame ${index+1}. Aborting.`;
+            gif.abort(); // Stop gif.js processing
+            resetUIState(originalSize, originalAspect); // Reset UI
+        };
+        // Assign src *after* setting onload/onerror
+        img.src = frameDataUrl;
+    });
+
+     if (!isRendering) { // Handle case where render cancelled before any frame loaded
+         resetUIState(originalSize, originalAspect);
+         return;
+     }
+
+    gif.on('progress', p => {
+        if (!isRendering) {
+            gif.abort(); // Abort if cancelled during render
+            return;
+        }
+        const percent = Math.round(50 + (p * 50)); // Map to 50-100%
+        progressFill.style.width = `${percent}%`;
+        progressFill.textContent = `${percent}%`;
+        progressInfo.textContent = `Rendering GIF: ${Math.round(p * 100)}%`;
+    });
+
+    gif.on('finished', blob => {
+         if (!isRendering) { // Check if cancelled just before finishing
+             console.log("Render cancelled before GIF finish event.");
+             resetUIState(originalSize, originalAspect);
+             return;
+         }
+        progressInfo.textContent = 'GIF Animation complete!';
+        progressFill.style.width = '100%';
+        progressFill.textContent = '100%';
+
+        let blobUrl = null;
+        try {
+            blobUrl = URL.createObjectURL(blob);
+            previewImage.src = blobUrl;
+            previewImage.dataset.blobUrl = blobUrl; // Store for download
+            previewImage.dataset.format = 'gif';
+            previewDiv.style.display = 'block';
+        } catch (e) {
+             console.error("Error creating Blob URL:", e);
+             progressInfo.textContent = 'Error creating preview URL.';
+             if(blobUrl) URL.revokeObjectURL(blobUrl); // Clean up if partially successful
+        }
+
+
+        resetUIState(originalSize, originalAspect); // Reset after showing preview (or attempting to)
+    });
+
+    // Handle potential abort/error states from gif.js library itself
+    gif.on('abort', () => {
+        console.log("GIF rendering aborted by library.");
+         if (isRendering) { // Prevent resetting if already reset by error handler
+            progressInfo.textContent = 'GIF Rendering Aborted.';
+            resetUIState(originalSize, originalAspect);
+         }
+    });
 }
 
 
-// Re-enable buttons and controls
-renderBtn.disabled = false;
-previewBtn.disabled = false;
-controlsPanel.style.opacity = 1.0;
-isRendering = false;
+function resetUIState(originalSize, originalAspect) {
+    // Restore renderer size and camera aspect
+    if (originalSize && originalAspect) {
+        renderer.setSize(originalSize.x, originalSize.y, true); // Use stored original size, update style
+        camera.aspect = originalAspect;
+        camera.updateProjectionMatrix();
+         onWindowResize(); // Call resize to ensure canvas style matches window if needed
+    } else {
+        // Fallback if original size wasn't passed (e.g., error during init)
+        onWindowResize();
+    }
 
-// Reset rotation to initial state if desired
-setMeshRotation(0);
+
+    // Re-enable buttons and controls
+    renderBtn.disabled = false;
+    previewBtn.disabled = false;
+    controlsPanel.style.opacity = 1.0;
+    isRendering = false; // Ensure flag is reset
+
+    // Reset rotation to start angle
+    setObjectRotation(0);
+     // Clear progress message unless it's completion/error/abort
+     const currentInfo = progressInfo.textContent;
+     if (currentInfo.startsWith('Captur') || currentInfo.startsWith('Initializ') || currentInfo.startsWith('Loading') || currentInfo.startsWith('Encoding') || currentInfo.startsWith('Rendering')) {
+       progressInfo.textContent = "Ready";
+    }
 }
 
 
 function closePreview() {
-previewDiv.style.display = 'none';
-// Optional: Revoke object URL to free memory if download isn't needed anymore
-const url = previewImage.dataset.blobUrl;
-if (url) {
-// URL.revokeObjectURL(url); // Be cautious: revoking prevents further downloads
-// previewImage.dataset.blobUrl = '';
-// previewImage.src = '';
-}
+    previewDiv.style.display = 'none';
+    const url = previewImage.dataset.blobUrl;
+    // Optionally revoke URL here if memory is a big concern,
+    // but it prevents re-downloading without re-rendering.
+    // Keeping it seems more user-friendly.
+    // if (url) {
+    //    URL.revokeObjectURL(url);
+    //    previewImage.dataset.blobUrl = '';
+    //    previewImage.src = '';
+    // }
 }
 
 function downloadAnimation() {
-const url = previewImage.dataset.blobUrl;
-const format = previewImage.dataset.format || 'gif';
+    const url = previewImage.dataset.blobUrl;
+    const format = previewImage.dataset.format || 'gif';
 
-if (!url) {
-alert("No animation preview available to download.");
-return;
-}
+    if (!url) {
+        alert("No animation preview available to download.");
+        return;
+    }
 
-const a = document.createElement('a');
-a.href = url;
-a.download = `wireframe-animation.${format}`;
-document.body.appendChild(a); // Required for Firefox
-a.click();
-document.body.removeChild(a);
-// Don't revoke URL immediately after click, allow download to start
+    const a = document.createElement('a');
+    a.href = url;
+    // Suggest a filename based on shape
+    const shapeName = shapeSelect.value || 'shape';
+    a.download = `${shapeName}-animation-${Date.now()}.${format}`; // Add timestamp
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 // --- Initialize ---
