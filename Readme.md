@@ -2,7 +2,7 @@
 
 A simple browser-based tool to create rotating wireframe animations of basic 3D shapes (Cube, Sphere, Cylinder, Cone, Torus) and export them as animated GIFs.
 
-wireframe.png
+![screenshot](wireframe.png)
 
 ## Features
 
