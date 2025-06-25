@@ -1,0 +1,305 @@
+---
+description: Best practices for Flutter development using clean architecture and BLoC pattern
+globs: **/*.dart, **/pubspec.yaml, **/*.arb
+---
+
+# Flutter Development
+
+// Description: Best practices for Flutter development using clean architecture and BLoC pattern
+// Recommended Globs: **/*.dart, **/pubspec.yaml, **/*.arb
+
+## Project Structure
+```
+lib/
+  ├── core/
+  │   ├── constants/
+  │   │   ├── app_constants.dart
+  │   │   └── theme_constants.dart
+  │   ├── theme/
+  │   │   ├── app_theme.dart
+  │   │   └── theme_extensions.dart
+  │   ├── utils/
+  │   │   ├── error_handler.dart
+  │   │   └── validators.dart
+  │   └── widgets/
+  │       └── common/
+  ├── features/
+  │   └── feature_name/
+  │       ├── data/
+  │       │   ├── datasources/
+  │       │   ├── models/
+  │       │   └── repositories/
+  │       ├── domain/
+  │       │   ├── entities/
+  │       │   ├── repositories/
+  │       │   └── usecases/
+  │       └── presentation/
+  │           ├── bloc/
+  │           ├── pages/
+  │           └── widgets/
+  ├── l10n/
+  │   ├── app_en.arb
+  │   └── app_es.arb
+  └── main.dart
+test/
+  ├── unit/
+  ├── widget/
+  └── integration/
+```
+
+## Clean Architecture Implementation
+```dart
+// Domain Layer - Entity
+class User {
+  final String id;
+  final String name;
+  final String email;
+
+  const User({
+    required this.id,
+    required this.name,
+    required this.email,
+  });
+}
+
+// Domain Layer - Repository Interface
+abstract class UserRepository {
+  Future<Either<Failure, User>> getUser(String id);
+  Future<Either<Failure, List<User>>> getUsers();
+}
+
+// Domain Layer - UseCase
+class GetUser implements UseCase<User, String> {
+  final UserRepository repository;
+
+  GetUser(this.repository);
+
+  @override
+  Future<Either<Failure, User>> call(String id) async {
+    return await repository.getUser(id);
+  }
+}
+```
+
+## BLoC Pattern Implementation
+```dart
+// Event
+abstract class UserEvent extends Equatable {
+  const UserEvent();
+
+  @override
+  List<Object> get props => [];
+}
+
+class GetUserEvent extends UserEvent {
+  final String userId;
+
+  const GetUserEvent(this.userId);
+
+  @override
+  List<Object> get props => [userId];
+}
+
+// State
+abstract class UserState extends Equatable {
+  const UserState();
+
+  @override
+  List<Object> get props => [];
+}
+
+class UserInitial extends UserState {}
+class UserLoading extends UserState {}
+class UserLoaded extends UserState {
+  final User user;
+
+  const UserLoaded(this.user);
+
+  @override
+  List<Object> get props => [user];
+}
+
+// BLoC
+class UserBloc extends Bloc<UserEvent, UserState> {
+  final GetUser getUser;
+
+  UserBloc({required this.getUser}) : super(UserInitial()) {
+    on<GetUserEvent>(_onGetUser);
+  }
+
+  Future<void> _onGetUser(
+    GetUserEvent event,
+    Emitter<UserState> emit,
+  ) async {
+    emit(UserLoading());
+    final result = await getUser(event.userId);
+    result.fold(
+      (failure) => emit(UserError(failure.message)),
+      (user) => emit(UserLoaded(user)),
+    );
+  }
+}
+```
+
+## Dependency Injection
+```dart
+final getIt = GetIt.instance;
+
+Future<void> initializeDependencies() async {
+  // External
+  getIt.registerSingleton(Dio());
+  getIt.registerSingleton(SharedPreferences.getInstance());
+
+  // Repositories
+  getIt.registerSingleton<UserRepository>(
+    UserRepositoryImpl(
+      remoteDataSource: getIt(),
+      localDataSource: getIt(),
+    ),
+  );
+
+  // UseCases
+  getIt.registerSingleton(GetUser(getIt()));
+
+  // BLoCs
+  getIt.registerFactory(() => UserBloc(getUser: getIt()));
+}
+```
+
+## Widget Guidelines
+1. Keep widgets small and focused:
+```dart
+class UserAvatar extends StatelessWidget {
+  final String imageUrl;
+  final double size;
+
+  const UserAvatar({
+    super.key,
+    required this.imageUrl,
+    this.size = 48.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size / 2),
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => const CircularProgressIndicator(),
+        errorWidget: (context, url, error) => const Icon(Icons.error),
+      ),
+    );
+  }
+}
+```
+
+2. Use proper error boundaries:
+```dart
+class ErrorBoundary extends StatelessWidget {
+  final Widget child;
+  final Widget Function(BuildContext, Object) onError;
+
+  const ErrorBoundary({
+    super.key,
+    required this.child,
+    required this.onError,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ErrorWidget.builder = (details) {
+      return onError(context, details.exception);
+    };
+    return child;
+  }
+}
+```
+
+## Testing Guidelines
+1. Unit Tests:
+```dart
+void main() {
+  late UserBloc userBloc;
+  late MockGetUser mockGetUser;
+
+  setUp(() {
+    mockGetUser = MockGetUser();
+    userBloc = UserBloc(getUser: mockGetUser);
+  });
+
+  tearDown(() {
+    userBloc.close();
+  });
+
+  test('initial state should be UserInitial', () {
+    expect(userBloc.state, equals(UserInitial()));
+  });
+
+  blocTest<UserBloc, UserState>(
+    'emits [UserLoading, UserLoaded] when GetUserEvent is added',
+    build: () {
+      when(() => mockGetUser(any()))
+          .thenAnswer((_) async => Right(tUser));
+      return userBloc;
+    },
+    act: (bloc) => bloc.add(const GetUserEvent('1')),
+    expect: () => [
+      UserLoading(),
+      UserLoaded(tUser),
+    ],
+  );
+}
+```
+
+2. Widget Tests:
+```dart
+void main() {
+  testWidgets('UserAvatar displays correctly', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UserAvatar(
+          imageUrl: 'https://example.com/avatar.jpg',
+        ),
+      ),
+    );
+
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+}
+```
+
+## Performance Guidelines
+1. Use `const` constructors:
+```dart
+// Good
+const MyWidget({super.key});
+
+// Bad
+MyWidget({super.key});  // Missing const
+```
+
+2. Implement proper list view optimization:
+```dart
+ListView.builder(
+  itemCount: items.length,
+  itemBuilder: (context, index) {
+    return const ListTile(
+      key: ValueKey('item_$index'),  // Proper key usage
+      title: Text('Item'),
+    );
+  },
+);
+```
+
+## Resources
+- [Flutter Documentation](https://docs.flutter.dev)
+- [BLoC Library](https://bloclibrary.dev)
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [GetIt Service Locator](https://pub.dev/packages/get_it)
+- [Flutter Testing](https://docs.flutter.dev/testing)

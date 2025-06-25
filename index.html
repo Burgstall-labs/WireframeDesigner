@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wireframe Animation Designer</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <h2>Wireframe Designer</h2>
+
+            <!-- Shape & Camera Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Shape & Camera
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="shape">Shape:</label>
+                            <select id="shape">
+                                <option value="cube">Cube</option>
+                                <option value="sphere">Sphere</option>
+                                <option value="cylinder">Cylinder</option>
+                                <option value="cone">Cone</option>
+                                <option value="torus">Torus</option>
+                                <option value="pyramid">Pyramid</option>
+                                <option value="dodecahedron">Dodecahedron</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="cameraType">Camera View:</label>
+                            <select id="cameraType">
+                                <option value="perspective">Perspective</option>
+                                <option value="orthographic">Orthographic</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dimensions Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Dimensions
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="width">Width:</label>
+                            <input type="number" id="width" value="4" min="0.1" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="height">Height:</label>
+                            <input type="number" id="height" value="2" min="0.1" step="0.1">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="depth" id="depthLabel">Depth/Radius:</label>
+                            <input type="number" id="depth" value="2" min="0.1" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <!-- Placeholder -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Appearance
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="bgColor">Background Color:</label>
+                            <input type="color" id="bgColor" value="#000000">
+                        </div>
+                        <div class="input-group">
+                            <label for="wireColor">Wireframe Color:</label>
+                            <input type="color" id="wireColor" value="#808080">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="faceColor">Face Color:</label>
+                            <input type="color" id="faceColor" value="#4444ff" disabled>
+                        </div>
+                        <div class="input-group">
+                            <label for="faceOpacity">Face Opacity:</label>
+                            <input type="range" id="faceOpacity" min="0" max="1" step="0.1" value="0.5" disabled>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="edgesOnly" checked>
+                            <label for="edgesOnly">Edges Only</label>
+                        </div>
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="showFaces">
+                            <label for="showFaces">Show Faces</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Animation Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Position Animation
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="posX">Start X:</label>
+                            <input type="number" id="posX" value="0" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="endPosX">End X:</label>
+                            <input type="number" id="endPosX" value="0" step="0.1">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="posY">Start Y:</label>
+                            <input type="number" id="posY" value="0" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="endPosY">End Y:</label>
+                            <input type="number" id="endPosY" value="0" step="0.1">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="posZ">Start Z:</label>
+                            <input type="number" id="posZ" value="0" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="endPosZ">End Z:</label>
+                            <input type="number" id="endPosZ" value="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rotation Animation Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Rotation Animation
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="startAngleX">Start X (°):</label>
+                            <input type="number" id="startAngleX" value="-10" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="endAngleX">End X (°):</label>
+                            <input type="number" id="endAngleX" value="10" step="1">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="startAngleY">Start Y (°):</label>
+                            <input type="number" id="startAngleY" value="-10" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="endAngleY">End Y (°):</label>
+                            <input type="number" id="endAngleY" value="10" step="1">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="easingType">Easing Function:</label>
+                        <select id="easingType">
+                            <option value="linear">Linear</option>
+                            <option value="easeInOut">Ease In-Out</option>
+                            <option value="easeIn">Ease In</option>
+                            <option value="easeOut">Ease Out</option>
+                            <option value="elastic">Elastic</option>
+                            <option value="bounce">Bounce</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="loopMode">Loop Mode:</label>
+                        <select id="loopMode">
+                            <option value="normal">Normal</option>
+                            <option value="pingpong">Ping-Pong</option>
+                            <option value="reverse">Reverse</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Settings Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Output Settings
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="outputWidth">Width (px):</label>
+                            <input type="number" id="outputWidth" value="832" min="100" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="outputHeight">Height (px):</label>
+                            <input type="number" id="outputHeight" value="480" min="100" step="1">
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="input-group">
+                            <label for="frameCount">Frame Count:</label>
+                            <input type="number" id="frameCount" value="81" min="2" max="360" step="1">
+                        </div>
+                        <div class="input-group">
+                            <label for="frameDelay">Frame Delay (ms):</label>
+                            <input type="number" id="frameDelay" value="100" min="10" max="1000" step="1">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="outputFormat">Output Format:</label>
+                        <select id="outputFormat">
+                            <option value="gif">Animated GIF</option>
+                            <option value="webm">WebM Video</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="section">
+                <div class="section-header" onclick="toggleSection(this)">
+                    Actions
+                </div>
+                <div class="section-content">
+                    <div class="settings-row">
+                        <button id="previewBtn">Preview Animation</button>
+                        <button id="renderBtn">Create Animation</button>
+                    </div>
+                    <div id="progressInfo">Ready</div>
+                    <div id="progressBar">
+                        <div id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Tips:</strong> 
+                <ul style="margin: 8px 0; padding-left: 20px; font-size: 0.85em;">
+                    <li>Click and drag on the 3D view to rotate the object</li>
+                    <li>Use collapsible sections to organize your workspace</li>
+                    <li>Preview animations before rendering to save time</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div id="preview">
+            <h3>Animation Preview</h3>
+            <img id="previewImage" src="" alt="Animation preview">
+            <div style="margin-top: 15px;">
+                <button id="downloadBtn">Download Animation</button>
+                <button id="closePreviewBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="gif.js"></script>
+    
+    <!-- Load application modules -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html> 

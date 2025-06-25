@@ -1,0 +1,280 @@
+---
+description: Best practices for React Native development using Expo SDK and TypeScript
+globs: **/*.{ts,tsx}, **/app.json, **/app.config.{js,ts}, **/assets/**/*
+---
+
+# React Native Expo
+
+// Description: Best practices for React Native development using Expo SDK and TypeScript
+// Recommended Globs: **/*.{ts,tsx}, **/app.json, **/app.config.{js,ts}, **/assets/**/*
+
+## Project Structure
+```
+project_name/
+├── assets/
+│   ├── fonts/
+│   └── images/
+├── src/
+│   ├── components/
+│   │   ├── common/
+│   │   └── screens/
+│   ├── screens/
+│   │   ├── auth/
+│   │   └── main/
+│   ├── navigation/
+│   │   ├── types.ts
+│   │   └── AppNavigator.tsx
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   └── useTheme.ts
+│   └── utils/
+│       ├── api.ts
+│       └── storage.ts
+├── App.tsx
+├── app.json
+├── app.config.ts
+└── tsconfig.json
+```
+
+## Component Structure
+```typescript
+import { StyleSheet } from 'react-native';
+import { useTheme } from '@hooks/useTheme';
+
+interface CardProps {
+  title: string;
+  description?: string;
+  onPress?: () => void;
+}
+
+export const Card: React.FC<CardProps> = ({
+  title,
+  description,
+  onPress
+}) => {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable
+      style={[styles.container, { backgroundColor: colors.card }]}
+      onPress={onPress}
+    >
+      <Text style={[styles.title, { color: colors.text }]}>
+        {title}
+      </Text>
+      {description && (
+        <Text style={[styles.description, { color: colors.text }]}>
+          {description}
+        </Text>
+      )}
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  description: {
+    marginTop: 8,
+    fontSize: 14,
+  },
+});
+```
+
+## Navigation Setup
+```typescript
+// src/navigation/types.ts
+export type RootStackParamList = {
+  Home: undefined;
+  Profile: { userId: string };
+  Settings: undefined;
+};
+
+// src/navigation/AppNavigator.tsx
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export const AppNavigator = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+```
+
+## Custom Hooks
+```typescript
+// src/hooks/useAuth.ts
+import { useSecureStore } from './useSecureStore';
+
+interface AuthState {
+  token: string | null;
+  user: User | null;
+}
+
+export const useAuth = () => {
+  const [state, setState] = useState<AuthState>({
+    token: null,
+    user: null,
+  });
+
+  const { getItem, setItem } = useSecureStore();
+
+  const login = async (credentials: Credentials) => {
+    try {
+      const response = await api.auth.login(credentials);
+      await setItem('token', response.token);
+      setState({ token: response.token, user: response.user });
+    } catch (error) {
+      throw new Error('Login failed');
+    }
+  };
+
+  return { ...state, login };
+};
+```
+
+## Asset Management
+```typescript
+// app.config.ts
+import { ExpoConfig } from '@expo/config';
+
+const config: ExpoConfig = {
+  name: 'MyApp',
+  version: '1.0.0',
+  extra: {
+    apiUrl: process.env.API_URL,
+  },
+  splash: {
+    image: './assets/splash.png',
+    resizeMode: 'contain',
+    backgroundColor: '#ffffff',
+  },
+  updates: {
+    fallbackToCacheTimeout: 0,
+    url: 'https://u.expo.dev/your-project-id',
+  },
+  assetBundlePatterns: [
+    'assets/images/*',
+    'assets/fonts/*',
+  ],
+};
+
+export default config;
+```
+
+## Error Handling
+```typescript
+// src/utils/error-boundary.tsx
+import * as Sentry from 'sentry-expo';
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+}
+
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  { hasError: boolean }
+> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    Sentry.Native.captureException(error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Push Notifications
+```typescript
+// src/utils/notifications.ts
+import * as Notifications from 'expo-notifications';
+
+export const registerForPushNotifications = async () => {
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') {
+    return;
+  }
+
+  const token = await Notifications.getExpoPushTokenAsync({
+    projectId: 'your-project-id',
+  });
+
+  return token;
+};
+
+export const configurePushNotifications = () => {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+};
+```
+
+## Best Practices
+
+### Component Design
+- Use functional components with hooks
+- Keep components small and focused
+- Implement proper prop types with TypeScript
+- Use memo for performance optimization
+
+### State Management
+- Use Context for global state
+- Implement proper data fetching patterns
+- Handle loading and error states
+- Use proper form state management
+
+### Performance
+- Implement proper list rendering
+- Use proper image optimization
+- Implement proper memory management
+- Handle offline support
+
+### Security
+- Use Expo's secure store for sensitive data
+- Implement proper authentication flow
+- Handle proper data encryption
+- Implement proper session management
+
+## Resources
+- [Expo Documentation](https://docs.expo.dev)
+- [React Navigation](https://reactnavigation.org)
+- [Expo Vector Icons](https://icons.expo.fyi)
+- [Sentry Expo](https://docs.expo.dev/guides/using-sentry)

@@ -1,0 +1,121 @@
+---
+description: Best practices for Firebase integration including Authentication, Firestore, Storage, and Functions
+globs: **/*.{js,jsx,ts,tsx}, **/firebase/**/*, **/functions/package.json
+---
+
+# Firebase Integration Rule
+
+// Description: Best practices for Firebase integration including Authentication, Firestore, Storage, and Functions
+// Recommended Globs: **/*.{js,jsx,ts,tsx}, **/firebase/**/*
+
+## Overview
+- Use Firebase for Authentication, Firestore, Realtime Database, Storage, Hosting, and Cloud Functions
+- Keep Firebase configuration and initialization in a dedicated module
+- Use modular Firebase SDK imports to optimize bundle size
+- Avoid using Firebase directly in components; extract logic into reusable hooks or services
+
+## Version Requirements
+- Node.js version 20 (MANDATORY for Cloud Functions as v18 is being deprecated)
+- Latest Firebase Admin SDK
+- Latest Firebase Functions SDK
+
+## Cloud Functions Setup
+```json
+// functions/package.json
+{
+  "name": "functions",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^4.5.0"
+  }
+}
+```
+
+## Authentication
+- Use Firebase Authentication for user management
+- Implement sign-in methods: Email/Password, Google, and other OAuth providers as needed
+- Use `onAuthStateChanged` to manage authentication state efficiently
+- Store authentication state in React context or Zustand for global access
+- Implement secure authentication flows with Firebase security rules
+
+## Firestore
+- Use Firestore for scalable, real-time data storage
+- Structure Firestore collections and documents efficiently
+- Use Firestore's indexing and query constraints for optimal performance
+- Implement Firestore security rules to protect sensitive data
+- Cache Firestore responses using local state or Zustand for improved performance
+
+## Storage
+- Use Firebase Storage for handling user-generated content
+- Implement secure file uploads with proper validation
+- Use Storage security rules to restrict access based on user roles
+- Optimize images and videos before uploading to reduce storage costs
+- Generate signed URLs for controlled file access when necessary
+
+## Cloud Functions Best Practices
+- Use TypeScript for better type safety and developer experience
+- Implement proper error handling and logging
+- Use environment variables for sensitive data
+- Implement rate limiting for public endpoints
+- Use appropriate memory and timeout settings
+- Implement proper CORS handling for HTTP functions
+
+## Example Cloud Function (TypeScript)
+```typescript
+import * as functions from 'firebase-functions/v2';
+import * as admin from 'firebase-admin';
+
+admin.initializeApp();
+
+export const processUser = functions.https.onCall(async (data, context) => {
+  // Ensure authenticated
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Function requires authentication'
+    );
+  }
+
+  try {
+    // Function logic here
+    return { success: true };
+  } catch (error) {
+    console.error('Error:', error);
+    throw new functions.https.HttpsError('internal', 'Processing failed');
+  }
+});
+```
+
+## Security Best Practices
+- Implement proper security rules for Firestore and Storage
+- Use custom claims for role-based access control
+- Validate all input data
+- Implement proper error handling
+- Use appropriate indexes for queries
+
+## Performance Optimization
+- Use appropriate indexes for Firestore queries
+- Implement proper caching strategies
+- Use batch operations for bulk updates
+- Monitor function execution time and memory usage
+
+## Testing
+- Write unit tests for Cloud Functions
+- Use Firebase Emulator Suite for local testing
+- Implement integration tests
+- Test security rules
+
+## Deployment
+- Use proper environment configuration
+- Implement CI/CD pipelines
+- Use proper versioning
+- Monitor function performance and errors
+
+## Resources
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Cloud Functions Documentation](https://firebase.google.com/docs/functions)
+- [Security Rules Documentation](https://firebase.google.com/docs/rules)
+- [Firebase Admin SDK Documentation](https://firebase.google.com/docs/admin/setup)

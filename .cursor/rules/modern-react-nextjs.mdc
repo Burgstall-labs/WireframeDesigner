@@ -1,0 +1,332 @@
+---
+description: Best practices for modern React and Next.js development with TypeScript, Tailwind CSS, and accessibility
+globs: **/*.{ts,tsx}, **/components/**/*, **/hooks/**/*, **/lib/**/*
+---
+
+# Modern React Next.js
+
+// Description: Best practices for modern React and Next.js development with TypeScript, Tailwind CSS, and accessibility
+// Recommended Globs: **/*.{ts,tsx}, **/components/**/*, **/hooks/**/*, **/lib/**/*
+
+## Project Structure
+```
+src/
+  components/
+    ui/
+      button/
+        button.tsx
+        types.ts
+      card/
+        card.tsx
+        types.ts
+    features/
+      product-card/
+        product-card.tsx
+        types.ts
+        use-product.ts
+    layout/
+      header/
+        header.tsx
+        nav-menu.tsx
+  hooks/
+    use-keyboard.ts
+    use-intersection.ts
+  lib/
+    utils/
+      cn.ts
+      format.ts
+    constants/
+      routes.ts
+  types/
+    index.ts
+```
+
+## Component Structure
+```typescript
+// src/components/ui/button/types.ts
+import { ButtonHTMLAttributes } from 'react';
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+}
+
+// src/components/ui/button/button.tsx
+import { forwardRef } from 'react';
+import { cn } from '@/lib/utils/cn';
+import type { ButtonProps } from './types';
+
+const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium transition-colors';
+const variants = {
+  primary: 'bg-primary-600 text-white hover:bg-primary-700 focus-visible:outline-primary-600',
+  secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:outline-gray-600',
+  ghost: 'hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-gray-600'
+};
+const sizes = {
+  sm: 'h-8 px-3 text-sm',
+  md: 'h-10 px-4 text-base',
+  lg: 'h-12 px-6 text-lg'
+};
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>((
+  {
+    variant = 'primary',
+    size = 'md',
+    className,
+    children,
+    disabled,
+    isLoading,
+    type = 'button',
+    ...props
+  },
+  ref
+) => {
+  const isDisabled = disabled || isLoading;
+
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={cn(
+        baseStyles,
+        variants[variant],
+        sizes[size],
+        'focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
+        'disabled:opacity-50 disabled:pointer-events-none',
+        className
+      )}
+      disabled={isDisabled}
+      aria-disabled={isDisabled}
+      {...props}
+    >
+      {isLoading ? (
+        <>
+          <span className="sr-only">Loading</span>
+          <svg
+            className="animate-spin -ml-1 mr-3 h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
+});
+
+Button.displayName = 'Button';
+```
+
+## Custom Hooks
+```typescript
+// src/hooks/use-keyboard.ts
+import { useCallback, useEffect } from 'react';
+
+interface UseKeyboardProps {
+  key: string;
+  callback: () => void;
+  ctrl?: boolean;
+  alt?: boolean;
+  shift?: boolean;
+}
+
+export const useKeyboard = ({
+  key,
+  callback,
+  ctrl = false,
+  alt = false,
+  shift = false
+}: UseKeyboardProps) => {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      const isCtrlPressed = ctrl ? event.ctrlKey : true;
+      const isAltPressed = alt ? event.altKey : true;
+      const isShiftPressed = shift ? event.shiftKey : true;
+
+      if (
+        event.key === key &&
+        isCtrlPressed &&
+        isAltPressed &&
+        isShiftPressed
+      ) {
+        callback();
+      }
+    },
+    [key, callback, ctrl, alt, shift]
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+};
+
+// src/hooks/use-intersection.ts
+import { useEffect, useRef, useState } from 'react';
+
+interface UseIntersectionProps {
+  threshold?: number;
+  root?: Element | null;
+  rootMargin?: string;
+}
+
+export const useIntersection = ({
+  threshold = 0,
+  root = null,
+  rootMargin = '0px'
+}: UseIntersectionProps = {}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold, root, rootMargin }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [threshold, root, rootMargin]);
+
+  return [ref, isVisible] as const;
+};
+```
+
+## Feature Components
+```typescript
+// src/components/features/product-card/types.ts
+export interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image: string;
+}
+
+export interface ProductCardProps {
+  product: Product;
+  onAddToCart: (id: string) => void;
+}
+
+// src/components/features/product-card/product-card.tsx
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils/format';
+import type { ProductCardProps } from './types';
+
+export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
+  const { id, title, description, price, image } = product;
+
+  const handleAddToCart = () => onAddToCart(id);
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleAddToCart();
+    }
+  };
+
+  return (
+    <div
+      className="group relative overflow-hidden rounded-lg border bg-white p-4
+                 transition-shadow hover:shadow-lg focus-within:ring-2
+                 focus-within:ring-primary-500"
+      tabIndex={0}
+      role="article"
+      aria-label={`${title} - ${formatCurrency(price)}`}
+    >
+      <div className="aspect-h-1 aspect-w-1 relative overflow-hidden rounded-md">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+          priority
+        />
+      </div>
+      <div className="mt-4 space-y-2">
+        <h3 className="text-lg font-medium text-gray-900 line-clamp-1">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-500 line-clamp-2">{description}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-bold text-gray-900">
+            {formatCurrency(price)}
+          </span>
+          <Button
+            onClick={handleAddToCart}
+            onKeyDown={handleKeyDown}
+            aria-label={`Add ${title} to cart`}
+          >
+            Add to Cart
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+## Best Practices
+
+### Component Design
+- Use early returns for conditional rendering
+- Prefer const arrow functions over function declarations
+- Keep components focused and single-responsibility
+- Implement proper TypeScript interfaces
+
+### Accessibility
+- Use semantic HTML elements
+- Implement proper ARIA attributes
+- Ensure keyboard navigation
+- Provide proper focus management
+
+### Styling
+- Use Tailwind's utility classes exclusively
+- Follow mobile-first responsive design
+- Use class: syntax over ternary operators
+- Maintain consistent spacing
+
+### Event Handling
+- Prefix handlers with 'handle'
+- Implement keyboard events
+- Use proper event types
+- Provide proper feedback
+
+### Performance
+- Use proper image optimization
+- Implement proper loading states
+- Use proper caching strategies
+- Optimize bundle size
+
+### Code Organization
+- Separate types into dedicated files
+- Use proper file naming conventions
+- Implement proper imports
+- Maintain consistent structure
+
+## Resources
+- [React Documentation](https://react.dev)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [WCAG Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/)

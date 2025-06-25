@@ -1,0 +1,305 @@
+---
+description: Best practices for mobile-first web development using Tailwind, React, and Firebase
+globs: **/*.{js,jsx,ts,tsx}, **/tailwind.config.{js,ts}, **/firebase.config.{js,ts}
+---
+
+# Mobile First Web Development
+
+// Description: Best practices for mobile-first web development using Tailwind, React, and Firebase
+// Recommended Globs: **/*.{js,jsx,ts,tsx}, **/tailwind.config.{js,ts}, **/firebase.config.{js,ts}
+
+## Project Structure
+```
+src/
+  components/
+    common/
+      Button.tsx
+      Card.tsx
+      Modal.tsx
+    features/
+      medications/
+        MedicationCard.tsx
+        MedicationList.tsx
+        AdherenceReport.tsx
+    layout/
+      Header.tsx
+      Navigation.tsx
+  hooks/
+    useMedications.ts
+    useAuth.ts
+    useFirestore.ts
+  pages/
+    dashboard/
+    medications/
+    reports/
+  services/
+    firebase/
+    analytics/
+  styles/
+    tailwind.css
+  utils/
+    dates.ts
+    statistics.ts
+```
+
+## Design System Configuration
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          // ... other shades
+          900: '#0c4a6e'
+        },
+        // ... other color scales
+      },
+      spacing: {
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)'
+      },
+      fontSize: {
+        'fluid-sm': 'clamp(0.875rem, 0.8rem + 0.25vw, 1rem)',
+        'fluid-base': 'clamp(1rem, 0.925rem + 0.375vw, 1.125rem)',
+        'fluid-lg': 'clamp(1.125rem, 1.05rem + 0.5vw, 1.25rem)'
+      }
+    }
+  },
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/aspect-ratio')
+  ]
+}
+```
+
+## Responsive Components
+```typescript
+// src/components/features/medications/MedicationCard.tsx
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+
+interface MedicationCardProps {
+  medication: Medication;
+  onTake: () => void;
+  onSkip: () => void;
+}
+
+export function MedicationCard({ medication, onTake, onSkip }: MedicationCardProps) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  return (
+    <motion.div
+      layout
+      className="p-4 bg-white rounded-lg shadow-md
+                 sm:p-6 md:p-8
+                 hover:shadow-lg transition-shadow
+                 touch-manipulation"
+      whileTap={{ scale: 0.98 }}
+    >
+      <div className="flex items-center space-x-4">
+        <div className="flex-shrink-0">
+          <img
+            src={medication.imageUrl}
+            alt={medication.name}
+            className="w-16 h-16 rounded-full
+                       sm:w-20 sm:h-20
+                       object-cover"
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-fluid-lg font-semibold text-gray-900
+                         truncate">
+            {medication.name}
+          </h3>
+          <p className="text-fluid-sm text-gray-500">
+            {medication.dosage} • {medication.schedule}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex space-x-3
+                      sm:mt-6">
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="flex-1 min-h-[44px] px-4 py-2
+                     bg-primary-600 text-white
+                     rounded-lg font-medium
+                     hover:bg-primary-700
+                     focus:outline-none focus:ring-2
+                     focus:ring-primary-500 focus:ring-offset-2
+                     transition-colors"
+          aria-label={`Take ${medication.name}`}
+        >
+          Take
+        </button>
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="flex-1 min-h-[44px] px-4 py-2
+                     border border-gray-300
+                     text-gray-700
+                     rounded-lg font-medium
+                     hover:bg-gray-50
+                     focus:outline-none focus:ring-2
+                     focus:ring-primary-500 focus:ring-offset-2
+                     transition-colors"
+          aria-label={`Skip ${medication.name}`}
+        >
+          Skip
+        </button>
+      </div>
+
+      {showConfirm && (
+        <ConfirmationModal
+          medication={medication}
+          onConfirm={onTake}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </motion.div>
+  );
+}
+```
+
+## Firebase Integration
+- Use Node.js 20 for Cloud Functions (MANDATORY as v18 is being deprecated)
+- Follow modular SDK approach
+
+```typescript
+// functions/package.json
+{
+  "name": "functions",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^4.5.0"
+  }
+}
+
+// src/services/firebase/medications.ts
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+
+export async function getMedicationsBySchedule(userId: string, schedule: string) {
+  try {
+    const q = query(
+      collection(db, 'medications'),
+      where('userId', '==', userId),
+      where('schedule', '==', schedule),
+      orderBy('name')
+    );
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error fetching medications:', error);
+    throw error;
+  }
+}
+
+export async function logMedicationAction(
+  userId: string,
+  medicationId: string,
+  action: 'take' | 'skip',
+  notes?: string
+) {
+  try {
+    await addDoc(collection(db, 'medication_logs'), {
+      userId,
+      medicationId,
+      action,
+      notes,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error logging medication action:', error);
+    throw error;
+  }
+}
+```
+
+## Custom Hooks
+```typescript
+// src/hooks/useMedications.ts
+import { useState, useEffect } from 'react';
+import { useFirestore } from './useFirestore';
+import { useAuth } from './useAuth';
+
+export function useMedications(schedule: string) {
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+  const { getMedicationsBySchedule } = useFirestore();
+
+  useEffect(() => {
+    if (!user) return;
+
+    async function fetchMedications() {
+      try {
+        const data = await getMedicationsBySchedule(user.id, schedule);
+        setMedications(data);
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMedications();
+  }, [user, schedule]);
+
+  return { medications, loading, error };
+}
+```
+
+## Best Practices
+
+### Mobile-First Design
+- Start with mobile layout and progressively enhance for larger screens
+- Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:) consistently
+- Ensure touch targets are at least 44x44 pixels
+- Implement proper safe area insets for modern mobile devices
+
+### Performance
+- Implement code splitting with React.lazy() and Suspense
+- Use proper image optimization techniques
+- Implement virtualization for long lists
+- Enable Firebase offline persistence
+
+### Accessibility
+- Maintain WCAG 2.1 compliance
+- Use semantic HTML elements
+- Implement proper ARIA attributes
+- Ensure proper color contrast ratios
+
+### Firebase Security
+- Implement proper security rules
+- Use batch operations for related updates
+- Implement proper error handling
+- Enable offline persistence
+
+### Animation Guidelines
+- Use subtle animations for feedback
+- Implement proper loading states
+- Consider reduced motion preferences
+- Use consistent transition timing
+
+### Form Handling
+- Implement proper validation
+- Show clear error messages
+- Use proper input types
+- Implement proper keyboard handling
+
+## Resources
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [React Documentation](https://reactjs.org/docs)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [WCAG Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/)
