@@ -256,11 +256,48 @@ export class ExportManager {
     /**
      * Download the exported animation
      */
-    downloadAnimation(filename = null) {
+    async downloadAnimation(filename = null) {
         if (!this.currentExportBlob) {
             throw new Error('No animation to download');
         }
 
+        // Use native file dialog if running in Electron
+        if (window.desktopDownload && window.desktopUtils?.isElectron()) {
+            try {
+                if (!filename) {
+                    filename = window.desktopDownload.getSuggestedFilename({
+                        shape: 'wireframe',
+                        format: this.currentExportFormat
+                    });
+                }
+
+                const result = await window.desktopDownload.saveAnimation(
+                    this.currentExportBlob, 
+                    filename, 
+                    this.currentExportFormat
+                );
+
+                if (result.success) {
+                    // Show success notification
+                    if (window.desktopNotifications) {
+                        window.desktopNotifications.showNotification(
+                            'Export Complete',
+                            `Animation saved to ${result.filePath}`
+                        );
+                    }
+                    return result;
+                } else if (!result.cancelled) {
+                    throw new Error(result.error || 'Failed to save file');
+                }
+                return result;
+
+            } catch (error) {
+                console.error('Native download failed, falling back to browser download:', error);
+                // Fall through to browser download
+            }
+        }
+
+        // Browser download fallback
         const url = URL.createObjectURL(this.currentExportBlob);
         const a = document.createElement('a');
         a.href = url;
@@ -278,6 +315,8 @@ export class ExportManager {
         
         // Clean up URL
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+        
+        return { success: true, method: 'browser' };
     }
 
     /**

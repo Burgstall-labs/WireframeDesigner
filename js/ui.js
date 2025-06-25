@@ -338,9 +338,23 @@ export class UIManager {
     /**
      * Handle download animation
      */
-    onDownloadAnimation() {
+    async onDownloadAnimation() {
         try {
-            this.exportManager.downloadAnimation();
+            const result = await this.exportManager.downloadAnimation();
+            
+            if (result && !result.success && !result.cancelled) {
+                this.showError(`Download failed: ${result.error || 'Unknown error'}`);
+            } else if (result && result.success) {
+                // Show brief success message
+                const originalText = this.elements.progressInfo.textContent;
+                this.elements.progressInfo.textContent = 'Animation saved successfully!';
+                this.elements.progressInfo.style.color = '#4CAF50';
+                
+                setTimeout(() => {
+                    this.elements.progressInfo.textContent = originalText;
+                    this.elements.progressInfo.style.color = '';
+                }, 2000);
+            }
         } catch (error) {
             console.error('Download failed:', error);
             this.showError(`Download failed: ${error.message}`);
@@ -603,6 +617,58 @@ export class UIManager {
         this.updateDynamicLabels();
         this.updateFaceControlsState();
         this.updateOutputControls(s.output.format);
+    }
+
+    /**
+     * Reset all settings to defaults (New Animation)
+     */
+    resetToDefaults() {
+        // Reset to default settings
+        this.currentSettings = {
+            shape: 'cube',
+            cameraType: 'perspective',
+            dimensions: { width: 4, height: 2, depth: 2 },
+            colors: { bg: '#000000', wire: '#808080', face: '#4444ff', faceOpacity: 0.5 },
+            appearance: { edgesOnly: true, showFaces: false },
+            animation: {
+                startPosition: { x: 0, y: 0, z: 0 },
+                endPosition: { x: 0, y: 0, z: 0 },
+                startRotation: { x: -10, y: -10, z: 0 },
+                endRotation: { x: 10, y: 10, z: 0 },
+                easingType: 'linear',
+                loopMode: 'normal'
+            },
+            output: {
+                width: 832,
+                height: 480,
+                frameCount: 81,
+                frameDelay: 100,
+                format: 'gif'
+            }
+        };
+
+        // Update UI from settings
+        this.updateUIFromSettings();
+        
+        // Update scene
+        this.updateGeometry();
+        this.onAnimationParamsChange();
+        
+        // Stop any running preview
+        if (this.isPreviewPlaying) {
+            this.stopPreview();
+        }
+        
+        // Close preview panel
+        this.onClosePreview();
+        
+        // Clear progress
+        this.updateProgress(0, 'Ready');
+        
+        // Save the reset settings
+        this.saveSettings();
+        
+        console.log('Settings reset to defaults');
     }
 
     /**

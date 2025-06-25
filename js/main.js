@@ -120,11 +120,58 @@ function restoreSectionStates() {
 }
 
 /**
+ * Detect and display environment information
+ */
+function showEnvironmentInfo() {
+    const envInfo = document.getElementById('environment-info');
+    const desktopTip = document.getElementById('desktop-tip');
+    
+    if (window.desktopUtils?.isElectron()) {
+        // Running in Electron
+        const env = window.desktopUtils.getEnvironment();
+        if (env) {
+            envInfo.innerHTML = `
+                <strong>Desktop App</strong> v${env.electron} 
+                <span style="opacity: 0.7;">| Platform: ${env.platform}</span>
+            `;
+        } else {
+            envInfo.textContent = 'Desktop App Mode';
+        }
+        
+        if (desktopTip) {
+            desktopTip.style.display = 'list-item';
+        }
+        
+        // Setup desktop menu handlers
+        if (window.electronAPI) {
+            window.electronAPI.onMenuExportAnimation(() => {
+                document.getElementById('renderBtn')?.click();
+            });
+            
+            window.electronAPI.onMenuNewAnimation(() => {
+                if (window.wireframeApp?.uiManager) {
+                    window.wireframeApp.uiManager.resetToDefaults();
+                }
+            });
+        }
+    } else {
+        // Running in browser
+        envInfo.innerHTML = `
+            <strong>Web App Mode</strong> 
+            <span style="opacity: 0.7;">| Browser: ${navigator.userAgent.split(' ').slice(-1)[0]}</span>
+        `;
+    }
+}
+
+/**
  * Initialize application when DOM is loaded
  */
 document.addEventListener('DOMContentLoaded', async () => {
     // Restore UI state
     restoreSectionStates();
+    
+    // Show environment information
+    showEnvironmentInfo();
     
     // Initialize application
     const app = new WireframeDesigner();
