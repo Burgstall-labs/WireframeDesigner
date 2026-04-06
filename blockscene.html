@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Block Scene Motion Builder</title>
+<link rel="stylesheet" href="blockscene.css">
+</head>
+<body>
+
+<div id="panel">
+  <div class="panel-header">
+    <h2>Block Scene Motion Builder</h2>
+    <div class="view-toggle">
+      <button id="view-edit-btn" class="active">Edit</button>
+      <button id="view-camera-btn">Camera</button>
+    </div>
+  </div>
+
+  <!-- Camera Motion -->
+  <div class="section">
+    <div class="section-header" data-section="camera">
+      <h3>Camera Motion</h3>
+    </div>
+    <div class="section-body" id="section-camera">
+      <div class="input-group">
+        <label for="camera-preset">Preset</label>
+        <select id="camera-preset">
+          <option value="static">Static</option>
+          <option value="orbit-left" selected>Orbit Left</option>
+          <option value="orbit-right">Orbit Right</option>
+          <option value="pan-left">Pan Left</option>
+          <option value="pan-right">Pan Right</option>
+          <option value="dolly-in">Dolly In</option>
+          <option value="dolly-out">Dolly Out</option>
+          <option value="pedestal-up">Rise Up</option>
+          <option value="pedestal-down">Lower Down</option>
+          <option value="zoom-in">Zoom In (FOV)</option>
+          <option value="zoom-out">Zoom Out (FOV)</option>
+          <option value="crane-up">Crane Up</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div class="input-group">
+          <label for="camera-intensity">Intensity: <span id="intensity-value">1.0</span></label>
+          <input type="range" id="camera-intensity" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+        <div class="input-group">
+          <label for="camera-easing">Easing</label>
+          <select id="camera-easing">
+            <option value="linear">Linear</option>
+            <option value="ease-in-out" selected>Ease In/Out</option>
+            <option value="ease-in">Ease In</option>
+            <option value="ease-out">Ease Out</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene Blocks -->
+  <div class="section">
+    <div class="section-header" data-section="blocks">
+      <h3>Scene Blocks</h3>
+    </div>
+    <div class="section-body" id="section-blocks">
+      <div class="quick-add">
+        <button class="btn-small" id="add-cube">+ Cube</button>
+        <button class="btn-small" id="add-floor">+ Floor</button>
+        <button class="btn-small" id="add-wall">+ Wall</button>
+        <button class="btn-small" id="add-pillar">+ Pillar</button>
+        <button class="btn-small" id="add-ramp">+ Ramp</button>
+      </div>
+      <div id="block-list"></div>
+    </div>
+  </div>
+
+  <!-- Block Properties -->
+  <div class="section">
+    <div class="section-header" data-section="properties">
+      <h3>Block Properties</h3>
+    </div>
+    <div class="section-body" id="properties-panel">
+      <div id="properties-empty" class="info-text">Select a block to edit its properties</div>
+      <div id="properties-form" style="display:none;">
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="prop-name">Name</label>
+            <input type="text" id="prop-name">
+          </div>
+          <div class="input-group">
+            <label for="prop-shape">Shape</label>
+            <select id="prop-shape">
+              <option value="box">Box</option>
+              <option value="cylinder">Cylinder</option>
+              <option value="cone">Cone</option>
+              <option value="sphere">Sphere</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="prop-color">Color</label>
+            <input type="color" id="prop-color" value="#808080">
+          </div>
+          <div class="input-group">
+            <button class="btn-small" id="duplicate-btn">Duplicate</button>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+        <label class="sub-heading">Position</label>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="prop-pos-x">X</label>
+            <input type="number" id="prop-pos-x" step="0.1" value="0">
+          </div>
+          <div class="input-group">
+            <label for="prop-pos-y">Y</label>
+            <input type="number" id="prop-pos-y" step="0.1" value="0">
+          </div>
+          <div class="input-group">
+            <label for="prop-pos-z">Z</label>
+            <input type="number" id="prop-pos-z" step="0.1" value="0">
+          </div>
+        </div>
+
+        <label class="sub-heading">Rotation (degrees)</label>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="prop-rot-x">X</label>
+            <input type="number" id="prop-rot-x" step="1" value="0">
+          </div>
+          <div class="input-group">
+            <label for="prop-rot-y">Y</label>
+            <input type="number" id="prop-rot-y" step="1" value="0">
+          </div>
+          <div class="input-group">
+            <label for="prop-rot-z">Z</label>
+            <input type="number" id="prop-rot-z" step="1" value="0">
+          </div>
+        </div>
+
+        <label class="sub-heading">Size</label>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="prop-size-w">W</label>
+            <input type="number" id="prop-size-w" step="0.1" min="0.05" value="1">
+          </div>
+          <div class="input-group">
+            <label for="prop-size-h">H</label>
+            <input type="number" id="prop-size-h" step="0.1" min="0.05" value="1">
+          </div>
+          <div class="input-group">
+            <label for="prop-size-d">D</label>
+            <input type="number" id="prop-size-d" step="0.1" min="0.05" value="1">
+          </div>
+        </div>
+
+        <div class="separator"></div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="prop-animate">
+          <label for="prop-animate">Animate this block</label>
+        </div>
+
+        <div class="motion-section" id="motion-section" style="display:none;">
+          <label class="sub-heading">End Position</label>
+          <div class="settings-row">
+            <div class="input-group">
+              <label for="prop-end-pos-x">X</label>
+              <input type="number" id="prop-end-pos-x" step="0.1" value="0">
+            </div>
+            <div class="input-group">
+              <label for="prop-end-pos-y">Y</label>
+              <input type="number" id="prop-end-pos-y" step="0.1" value="0">
+            </div>
+            <div class="input-group">
+              <label for="prop-end-pos-z">Z</label>
+              <input type="number" id="prop-end-pos-z" step="0.1" value="0">
+            </div>
+          </div>
+          <label class="sub-heading">End Rotation (degrees)</label>
+          <div class="settings-row">
+            <div class="input-group">
+              <label for="prop-end-rot-x">X</label>
+              <input type="number" id="prop-end-rot-x" step="1" value="0">
+            </div>
+            <div class="input-group">
+              <label for="prop-end-rot-y">Y</label>
+              <input type="number" id="prop-end-rot-y" step="1" value="0">
+            </div>
+            <div class="input-group">
+              <label for="prop-end-rot-z">Z</label>
+              <input type="number" id="prop-end-rot-z" step="1" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output Settings -->
+  <div class="section">
+    <div class="section-header" data-section="output">
+      <h3>Output</h3>
+    </div>
+    <div class="section-body" id="section-output">
+      <div class="settings-row">
+        <div class="input-group">
+          <label for="output-width">Width (px)</label>
+          <input type="number" id="output-width" value="832" min="128" step="1">
+        </div>
+        <div class="input-group">
+          <label for="output-height">Height (px)</label>
+          <input type="number" id="output-height" value="480" min="128" step="1">
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="input-group">
+          <label for="frame-count">Frames</label>
+          <input type="number" id="frame-count" value="81" min="2" max="360" step="1">
+        </div>
+        <div class="input-group">
+          <label for="output-fps">FPS</label>
+          <input type="number" id="output-fps" value="24" min="1" max="60" step="1">
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="show-grid" checked>
+        <label for="show-grid">Show grid in export</label>
+      </div>
+      <button id="export-btn" class="btn-success">Export WebM Video</button>
+      <div id="progress-info" class="info-text">Ready</div>
+      <div id="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="info-text" style="margin-top:12px; padding-top:8px; border-top:1px solid #3a3a3a;">
+    Build grayscale block scenes with camera motion for LTX 2.3 IC-LoRA conditioning videos. Serve via local web server.
+  </div>
+</div>
+
+<!-- Export Preview Panel -->
+<div id="export-panel">
+  <h3>Export Preview</h3>
+  <video id="export-preview" controls style="max-width:320px; max-height:240px; display:block; margin:0 auto 10px;"></video>
+  <a id="export-download" style="display:none;"></a>
+  <button id="download-btn" class="btn-success">Download WebM</button>
+  <button id="close-export-btn" class="btn-small">Close</button>
+</div>
+
+<!-- Timeline Bar -->
+<div id="timeline">
+  <div class="timeline-controls">
+    <button id="play-btn" class="btn-small">Play</button>
+    <button id="stop-btn" class="btn-small">Stop</button>
+    <span id="time-label">0 / 81</span>
+    <input type="range" id="timeline-scrubber" min="0" max="1000" step="1" value="0">
+  </div>
+</div>
+
+<!-- Three.js and OrbitControls from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="blockscene.js"></script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+/* ===================================================
+   Block Scene Motion Builder - Stylesheet
+   Dark professional theme for 3D block scene tool
+   =================================================== */
+
+/* --- Reset & Base --- */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #1a1a1a;
+  color: #d0d0d0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+/* --- Scrollbar (Webkit) --- */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* --- Left Control Panel --- */
+
+#panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 380px;
+  height: 100vh;
+  background: #252525;
+  border-right: 1px solid #3a3a3a;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- App Title --- */
+
+h2 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #e0e0e0;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* --- View Toggle (Edit / Camera) --- */
+
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle button {
+  background: #2d2d2d;
+  color: #999;
+  border: none;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-toggle button:not(:last-child) {
+  border-right: 1px solid #3a3a3a;
+}
+
+.view-toggle button:hover {
+  background: #363636;
+  color: #d0d0d0;
+}
+
+.view-toggle button.active {
+  background: #5b9bd5;
+  color: #fff;
+}
+
+/* --- Sections (Collapsible) --- */
+
+.section {
+  background: #2d2d2d;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.section-header:hover {
+  background: #333333;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c0c0c0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.section-header::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #888;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.section.collapsed .section-header::after {
+  transform: rotate(-90deg);
+}
+
+.section.collapsed .section-body {
+  display: none;
+}
+
+.section-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid #3a3a3a;
+}
+
+/* --- Settings Row (side-by-side inputs) --- */
+
+.settings-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.settings-row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Input Group (label + input) --- */
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.input-group label {
+  font-size: 11px;
+  color: #999;
+  font-weight: 500;
+}
+
+/* --- Text & Number Inputs, Selects --- */
+
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  height: 28px;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  color: #d0d0d0;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 0 8px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  border-color: #5b9bd5;
+}
+
+input[type="number"]:hover,
+input[type="text"]:hover,
+select:hover {
+  border-color: #4a4a4a;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 22px;
+}
+
+/* --- Range Input (Slider) --- */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: #3a3a3a;
+  border-radius: 2px;
+  outline: none;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #5b9bd5;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #4a8ac4;
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #5b9bd5;
+  border-radius: 50%;
+  border: 2px solid #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #4a8ac4;
+}
+
+input[type="range"]::-moz-range-track {
+  background: #3a3a3a;
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+/* --- Color Input --- */
+
+input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+/* --- Buttons --- */
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  background: #5b9bd5;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+button:hover {
+  background: #4a8ac4;
+}
+
+button:active {
+  opacity: 0.85;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-success {
+  background: #6db33f;
+}
+
+.btn-success:hover {
+  background: #5ea032;
+}
+
+.btn-danger {
+  background: #d94444;
+}
+
+.btn-danger:hover {
+  background: #c33a3a;
+}
+
+.btn-small {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: #888;
+  border-radius: 3px;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-icon:hover {
+  background: #3a3a3a;
+  color: #d0d0d0;
+}
+
+.btn-icon.btn-danger:hover {
+  background: rgba(217, 68, 68, 0.2);
+  color: #d94444;
+}
+
+/* --- Block List --- */
+
+#block-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  background: #1e1e1e;
+  padding: 4px;
+}
+
+.block-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 3px solid transparent;
+}
+
+.block-item:hover {
+  background: #2d2d2d;
+}
+
+.block-item.selected {
+  background: #3a4a5a;
+  border-left-color: #5b9bd5;
+}
+
+.block-item .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid #555;
+  flex-shrink: 0;
+}
+
+.block-item .block-name {
+  flex: 1;
+  font-size: 12px;
+  color: #d0d0d0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-item .btn-icon {
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.block-item:hover .btn-icon {
+  opacity: 1;
+}
+
+/* --- Quick Add Presets --- */
+
+.quick-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quick-add button {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+  background: #353535;
+  color: #bbb;
+  border: 1px solid #3a3a3a;
+}
+
+.quick-add button:hover {
+  background: #404040;
+  color: #d0d0d0;
+  border-color: #5b9bd5;
+}
+
+/* --- Motion Section (per-block) --- */
+
+.motion-section {
+  margin-left: 4px;
+  padding-left: 10px;
+  border-left: 2px solid #3a3a3a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* --- Checkbox Row --- */
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #5b9bd5;
+  cursor: pointer;
+  margin: 0;
+}
+
+.checkbox-row label {
+  font-size: 12px;
+  color: #d0d0d0;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* --- Separator --- */
+
+.separator {
+  height: 1px;
+  background: #3a3a3a;
+  border: none;
+  margin: 4px 0;
+}
+
+/* --- Info Text --- */
+
+.info-text {
+  font-size: 11px;
+  color: #777;
+  line-height: 1.4;
+  margin: 2px 0;
+}
+
+/* --- Timeline (Bottom Bar) --- */
+
+#timeline {
+  position: fixed;
+  bottom: 0;
+  left: 380px;
+  right: 0;
+  height: 48px;
+  background: #252525;
+  border-top: 1px solid #3a3a3a;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.timeline-controls button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.timeline-controls .time-display {
+  font-size: 11px;
+  color: #999;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+#timeline-scrubber {
+  flex: 1;
+  height: 4px;
+  margin: 0 4px;
+}
+
+#timeline-scrubber::-webkit-slider-thumb {
+  width: 12px;
+  height: 20px;
+  border-radius: 2px;
+  background: #5b9bd5;
+  border: 1px solid #1a1a1a;
+}
+
+#timeline-scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 20px;
+  border-radius: 2px;
+  background: #5b9bd5;
+  border: 1px solid #1a1a1a;
+}
+
+/* --- Export Panel (Floating, Top-Right) --- */
+
+#export-panel {
+  display: none;
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 320px;
+  background: #252525;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  z-index: 20;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+#export-panel.visible {
+  display: block;
+}
+
+#export-panel h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+/* --- Progress Bar --- */
+
+#progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #1e1e1e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+#progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #6db33f;
+  border-radius: 3px;
+  transition: width 0.2s ease-out;
+}
+
+/* --- Utility --- */
+
+label {
+  font-size: 11px;
+  color: #999;
+  font-weight: 500;
+}
