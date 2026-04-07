@@ -690,6 +690,23 @@ button:disabled {
   transition: width 0.2s ease-out;
 }
 
+#detect-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #1e1e1e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+#detect-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #5b9bd5;
+  border-radius: 3px;
+  transition: width 0.3s ease-out;
+}
+
 /* --- Utility --- */
 
 label {

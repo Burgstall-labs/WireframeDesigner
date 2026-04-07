@@ -51,6 +51,43 @@
             <input type="range" id="ref-edge-threshold" min="5" max="100" step="1" value="30">
           </div>
         </div>
+        <div class="separator"></div>
+        <label class="sub-heading">Auto-detect Blocks (AI)</label>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="detect-block-count">Max blocks: <span id="detect-count-value">6</span></label>
+            <input type="range" id="detect-block-count" min="3" max="15" step="1" value="6">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="detect-depth-bands">Depth layers: <span id="detect-bands-value">4</span></label>
+            <input type="range" id="detect-depth-bands" min="2" max="8" step="1" value="4">
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="detect-add-ground" checked>
+          <label for="detect-add-ground">Add ground plane</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="detect-clear-existing" checked>
+          <label for="detect-clear-existing">Clear existing blocks first</label>
+        </div>
+        <button id="detect-blocks-btn" class="btn-success">Auto-detect Blocks</button>
+        <div id="detect-progress" class="info-text"></div>
+        <div id="detect-progress-bar" style="display:none;">
+          <div id="detect-progress-fill"></div>
+        </div>
+
+        <div class="separator"></div>
+        <label class="sub-heading">Scene JSON</label>
+        <div class="settings-row">
+          <button class="btn-small" id="export-json-btn">Copy JSON</button>
+          <button class="btn-small" id="import-json-btn">Load JSON</button>
+        </div>
+        <textarea id="json-textarea" rows="3" style="display:none; width:100%; background:#2d2d2d; color:#d0d0d0; border:1px solid #3a3a3a; border-radius:3px; padding:4px; font-size:11px; font-family:monospace; resize:vertical;"></textarea>
+
+        <div class="separator"></div>
         <div class="settings-row">
           <button class="btn-small btn-danger" id="ref-clear">Remove image</button>
         </div>

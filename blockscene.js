@@ -1378,6 +1378,497 @@ function setupReferenceImageListeners() {
   if (clearBtn) {
     clearBtn.addEventListener('click', clearReferenceImage);
   }
+
+  // Detect block count slider
+  var detectCount = document.getElementById('detect-block-count');
+  var detectCountLabel = document.getElementById('detect-count-value');
+  if (detectCount) {
+    detectCount.addEventListener('input', function () {
+      if (detectCountLabel) detectCountLabel.textContent = detectCount.value;
+    });
+  }
+
+  // Detect depth bands slider
+  var detectBands = document.getElementById('detect-depth-bands');
+  var detectBandsLabel = document.getElementById('detect-bands-value');
+  if (detectBands) {
+    detectBands.addEventListener('input', function () {
+      if (detectBandsLabel) detectBandsLabel.textContent = detectBands.value;
+    });
+  }
+
+  // Auto-detect button
+  var detectBtn = document.getElementById('detect-blocks-btn');
+  if (detectBtn) {
+    detectBtn.addEventListener('click', autoDetectBlocks);
+  }
+
+  // JSON export/import
+  var exportJsonBtn = document.getElementById('export-json-btn');
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', exportSceneJSON);
+  }
+  var importJsonBtn = document.getElementById('import-json-btn');
+  if (importJsonBtn) {
+    importJsonBtn.addEventListener('click', importSceneJSON);
+  }
+}
+
+// ─── AI Depth Estimation & Block Detection ─────────────────────────
+
+var depthPipeline = null; // cached after first load
+
+function setDetectProgress(text, pct) {
+  var info = document.getElementById('detect-progress');
+  var bar = document.getElementById('detect-progress-bar');
+  var fill = document.getElementById('detect-progress-fill');
+  if (info) info.textContent = text;
+  if (pct !== undefined) {
+    if (bar) bar.style.display = 'block';
+    if (fill) fill.style.width = pct + '%';
+  }
+}
+
+async function autoDetectBlocks() {
+  if (!refImageData.image) {
+    setDetectProgress('Load a reference image first.');
+    return;
+  }
+
+  var detectBtn = document.getElementById('detect-blocks-btn');
+  if (detectBtn) detectBtn.disabled = true;
+
+  try {
+    // Step 1: Load Transformers.js and model
+    if (!depthPipeline) {
+      setDetectProgress('Loading AI depth model (first time: ~50MB download)...', 10);
+      var transformers = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+      setDetectProgress('Initializing depth estimation model...', 30);
+      depthPipeline = await transformers.pipeline(
+        'depth-estimation',
+        'onnx-community/depth-anything-v2-small',
+        { dtype: 'q8' }
+      );
+      setDetectProgress('Model loaded.', 40);
+    }
+
+    // Step 2: Run depth estimation on the reference image
+    setDetectProgress('Running depth estimation...', 50);
+
+    // Create a blob URL from the loaded image for the pipeline
+    var imgCanvas = document.createElement('canvas');
+    imgCanvas.width = refImageData.image.naturalWidth;
+    imgCanvas.height = refImageData.image.naturalHeight;
+    var imgCtx = imgCanvas.getContext('2d');
+    imgCtx.drawImage(refImageData.image, 0, 0);
+    var blob = await new Promise(function (resolve) {
+      imgCanvas.toBlob(resolve, 'image/png');
+    });
+    var imgUrl = URL.createObjectURL(blob);
+
+    var result = await depthPipeline(imgUrl);
+    URL.revokeObjectURL(imgUrl);
+
+    setDetectProgress('Processing depth map...', 70);
+
+    // Step 3: Extract depth data
+    var depthTensor = result.depth;
+    var depthData;
+    var depthW, depthH;
+
+    if (depthTensor.data) {
+      depthData = depthTensor.data;
+      depthH = depthTensor.height;
+      depthW = depthTensor.width;
+    } else if (depthTensor instanceof ImageData) {
+      depthW = depthTensor.width;
+      depthH = depthTensor.height;
+      depthData = new Float32Array(depthW * depthH);
+      for (var i = 0; i < depthW * depthH; i++) {
+        depthData[i] = depthTensor.data[i * 4] / 255;
+      }
+    }
+
+    // If result.predicted_depth is available (newer transformers.js)
+    if (!depthData && result.predicted_depth) {
+      var pd = result.predicted_depth;
+      if (pd.dims) {
+        depthH = pd.dims[pd.dims.length - 2];
+        depthW = pd.dims[pd.dims.length - 1];
+      }
+      depthData = pd.data;
+    }
+
+    if (!depthData || !depthW || !depthH) {
+      setDetectProgress('Could not extract depth data from model output.', 0);
+      if (detectBtn) detectBtn.disabled = false;
+      return;
+    }
+
+    // Normalize depth to 0-1 range
+    var minD = Infinity, maxD = -Infinity;
+    for (var k = 0; k < depthData.length; k++) {
+      if (depthData[k] < minD) minD = depthData[k];
+      if (depthData[k] > maxD) maxD = depthData[k];
+    }
+    var rangeD = maxD - minD || 1;
+    var normalizedDepth = new Float32Array(depthData.length);
+    for (var k = 0; k < depthData.length; k++) {
+      normalizedDepth[k] = (depthData[k] - minD) / rangeD;
+    }
+
+    setDetectProgress('Generating blocks from depth map...', 85);
+
+    // Step 4: Generate blocks
+    var maxBlocks = parseInt(document.getElementById('detect-block-count').value) || 6;
+    var numBands = parseInt(document.getElementById('detect-depth-bands').value) || 4;
+    var addGround = document.getElementById('detect-add-ground').checked;
+    var clearExisting = document.getElementById('detect-clear-existing').checked;
+
+    var blocks = depthMapToBlocks(normalizedDepth, depthW, depthH, numBands, maxBlocks);
+
+    // Step 5: Clear and add to scene
+    if (clearExisting) {
+      var idsToRemove = state.blocks.map(function (b) { return b.id; });
+      idsToRemove.forEach(function (id) { removeBlock(id); });
+    }
+
+    if (addGround) {
+      addBlock('floor');
+    }
+
+    blocks.forEach(function (b) {
+      var id = state.nextBlockId++;
+      var block = {
+        id: id,
+        name: b.name,
+        shape: 'box',
+        color: b.color,
+        position: { x: b.x, y: b.y, z: b.z },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: b.w, y: b.h, z: b.d },
+        hasMotion: false,
+        endPosition: { x: b.x, y: b.y, z: b.z },
+        endRotation: { x: 0, y: 0, z: 0 },
+        mesh: null
+      };
+      block.mesh = createBlockMesh(block);
+      scene.add(block.mesh);
+      state.blocks.push(block);
+    });
+
+    updateBlockList();
+    if (state.blocks.length > 0) {
+      selectBlock(state.blocks[state.blocks.length > 1 ? 1 : 0].id);
+    }
+
+    setDetectProgress('Done! Generated ' + blocks.length + ' blocks.', 100);
+
+  } catch (err) {
+    console.error('Auto-detect error:', err);
+    setDetectProgress('Error: ' + err.message, 0);
+  }
+
+  if (detectBtn) detectBtn.disabled = false;
+}
+
+// ─── Depth Map to Blocks Algorithm ─────────────────────────────────
+
+function depthMapToBlocks(depthMap, w, h, numBands, maxBlocks) {
+  // Downsample for faster processing
+  var procW = Math.min(w, 128);
+  var procH = Math.min(h, 128);
+  var scaled = bilinearResize(depthMap, w, h, procW, procH);
+
+  // Gaussian blur to reduce noise
+  scaled = gaussianBlur3x3(scaled, procW, procH);
+
+  // Quantize depth into bands
+  var labels = new Int32Array(procW * procH);
+  for (var i = 0; i < labels.length; i++) {
+    labels[i] = Math.min(numBands - 1, Math.floor(scaled[i] * numBands));
+  }
+
+  // Find connected components per band using flood fill
+  var componentId = new Int32Array(procW * procH).fill(-1);
+  var components = []; // {band, pixelCount, sumX, sumY, sumDepth, minX, maxX, minY, maxY}
+  var nextComp = 0;
+
+  for (var y = 0; y < procH; y++) {
+    for (var x = 0; x < procW; x++) {
+      var idx = y * procW + x;
+      if (componentId[idx] >= 0) continue;
+
+      var band = labels[idx];
+      var comp = {
+        id: nextComp,
+        band: band,
+        pixelCount: 0,
+        sumX: 0, sumY: 0, sumDepth: 0,
+        minX: x, maxX: x, minY: y, maxY: y
+      };
+
+      // Flood fill
+      var stack = [idx];
+      while (stack.length > 0) {
+        var ci = stack.pop();
+        if (componentId[ci] >= 0) continue;
+        var cx = ci % procW;
+        var cy = Math.floor(ci / procW);
+        if (labels[ci] !== band) continue;
+
+        componentId[ci] = nextComp;
+        comp.pixelCount++;
+        comp.sumX += cx;
+        comp.sumY += cy;
+        comp.sumDepth += scaled[ci];
+        if (cx < comp.minX) comp.minX = cx;
+        if (cx > comp.maxX) comp.maxX = cx;
+        if (cy < comp.minY) comp.minY = cy;
+        if (cy > comp.maxY) comp.maxY = cy;
+
+        // 4-connected neighbors
+        if (cx > 0) stack.push(ci - 1);
+        if (cx < procW - 1) stack.push(ci + 1);
+        if (cy > 0) stack.push(ci - procW);
+        if (cy < procH - 1) stack.push(ci + procW);
+      }
+
+      components.push(comp);
+      nextComp++;
+    }
+  }
+
+  // Filter: remove tiny components (< 2% of image area)
+  var minArea = procW * procH * 0.02;
+  components = components.filter(function (c) { return c.pixelCount >= minArea; });
+
+  // Sort by size (largest first) and take top maxBlocks
+  components.sort(function (a, b) { return b.pixelCount - a.pixelCount; });
+  components = components.slice(0, maxBlocks);
+
+  // Convert to 3D blocks
+  // Scene mapping: image coords -> world coords
+  // X: image left-right -> scene X (-sceneW/2 to sceneW/2)
+  // Y: depth -> scene Z (near=front, far=back)
+  // Z: image top-bottom -> scene Y (top=tall, bottom=ground)
+  var sceneWidth = 10;
+  var sceneDepth = 8;
+  var sceneMaxHeight = 4;
+  var aspect = procW / procH;
+
+  var grays = ['#555555', '#666666', '#707070', '#7a7a7a', '#858585',
+               '#909090', '#9a9a9a', '#a0a0a0', '#aaaaaa', '#b0b0b0',
+               '#bbbbbb', '#c0c0c0', '#cccccc', '#d0d0d0', '#d8d8d8'];
+
+  var blocks = [];
+  components.forEach(function (comp, idx) {
+    var centerX = comp.sumX / comp.pixelCount;
+    var centerY = comp.sumY / comp.pixelCount;
+    var avgDepth = comp.sumDepth / comp.pixelCount;
+    var bboxW = comp.maxX - comp.minX + 1;
+    var bboxH = comp.maxY - comp.minY + 1;
+
+    // Map image position to scene coordinates
+    // X: center of image = scene X=0
+    var nx = (centerX / procW - 0.5) * 2; // -1 to 1
+    var ny = (centerY / procH - 0.5) * 2; // -1 to 1
+
+    // Depth: 0 = near (front of scene), 1 = far (back)
+    // Invert so that high depth values (far) go to negative Z
+    var sceneZ = -(avgDepth - 0.5) * sceneDepth;
+
+    // X position, scaled by depth for perspective
+    var perspScale = 0.7 + avgDepth * 0.6;
+    var sceneX = nx * (sceneWidth / 2) * perspScale;
+
+    // Block height: taller blocks for regions in the upper part of the image
+    // Bottom of image = ground level, top = higher
+    var heightFromBottom = 1 - (centerY / procH);
+    var blockHeight = Math.max(0.3, heightFromBottom * sceneMaxHeight);
+
+    // Block width and depth from bounding box size
+    var blockW = Math.max(0.3, (bboxW / procW) * sceneWidth * perspScale);
+    var blockD = Math.max(0.3, (bboxH / procH) * sceneDepth * 0.5);
+
+    // Y position: block sits on ground, center at half height
+    var sceneY = blockHeight / 2;
+
+    // Color: darker for nearer objects, lighter for farther
+    var colorIdx = Math.min(grays.length - 1, Math.floor(avgDepth * (grays.length - 1)));
+
+    blocks.push({
+      name: 'Block ' + (idx + 1),
+      x: Math.round(sceneX * 10) / 10,
+      y: Math.round(sceneY * 10) / 10,
+      z: Math.round(sceneZ * 10) / 10,
+      w: Math.round(blockW * 10) / 10,
+      h: Math.round(blockHeight * 10) / 10,
+      d: Math.round(blockD * 10) / 10,
+      color: grays[colorIdx]
+    });
+  });
+
+  return blocks;
+}
+
+function bilinearResize(src, srcW, srcH, dstW, dstH) {
+  var dst = new Float32Array(dstW * dstH);
+  var xRatio = srcW / dstW;
+  var yRatio = srcH / dstH;
+  for (var y = 0; y < dstH; y++) {
+    for (var x = 0; x < dstW; x++) {
+      var sx = x * xRatio;
+      var sy = y * yRatio;
+      var x0 = Math.floor(sx);
+      var y0 = Math.floor(sy);
+      var x1 = Math.min(x0 + 1, srcW - 1);
+      var y1 = Math.min(y0 + 1, srcH - 1);
+      var fx = sx - x0;
+      var fy = sy - y0;
+      var v = src[y0 * srcW + x0] * (1 - fx) * (1 - fy)
+            + src[y0 * srcW + x1] * fx * (1 - fy)
+            + src[y1 * srcW + x0] * (1 - fx) * fy
+            + src[y1 * srcW + x1] * fx * fy;
+      dst[y * dstW + x] = v;
+    }
+  }
+  return dst;
+}
+
+function gaussianBlur3x3(src, w, h) {
+  var dst = new Float32Array(w * h);
+  var kernel = [1, 2, 1, 2, 4, 2, 1, 2, 1];
+  var kSum = 16;
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      var sum = 0;
+      for (var ky = -1; ky <= 1; ky++) {
+        for (var kx = -1; kx <= 1; kx++) {
+          sum += src[(y + ky) * w + (x + kx)] * kernel[(ky + 1) * 3 + (kx + 1)];
+        }
+      }
+      dst[y * w + x] = sum / kSum;
+    }
+  }
+  // Copy borders
+  for (var x = 0; x < w; x++) { dst[x] = src[x]; dst[(h - 1) * w + x] = src[(h - 1) * w + x]; }
+  for (var y = 0; y < h; y++) { dst[y * w] = src[y * w]; dst[y * w + w - 1] = src[y * w + w - 1]; }
+  return dst;
+}
+
+// ─── Scene JSON Import/Export ──────────────────────────────────────
+
+function exportSceneJSON() {
+  var sceneData = {
+    blocks: state.blocks.map(function (b) {
+      return {
+        name: b.name,
+        shape: b.shape,
+        color: b.color,
+        position: b.position,
+        rotation: b.rotation,
+        scale: b.scale,
+        hasMotion: b.hasMotion,
+        endPosition: b.endPosition,
+        endRotation: b.endRotation
+      };
+    }),
+    camera: {
+      preset: (document.getElementById('camera-preset') || {}).value || 'static',
+      intensity: parseFloat((document.getElementById('camera-intensity') || {}).value) || 1.0,
+      easing: (document.getElementById('camera-easing') || {}).value || 'linear'
+    },
+    output: {
+      width: parseInt((document.getElementById('output-width') || {}).value) || 832,
+      height: parseInt((document.getElementById('output-height') || {}).value) || 480,
+      frames: parseInt((document.getElementById('frame-count') || {}).value) || 81,
+      fps: parseInt((document.getElementById('output-fps') || {}).value) || 24
+    }
+  };
+
+  var jsonStr = JSON.stringify(sceneData, null, 2);
+  var textarea = document.getElementById('json-textarea');
+  if (textarea) {
+    textarea.style.display = 'block';
+    textarea.value = jsonStr;
+    textarea.select();
+    try { navigator.clipboard.writeText(jsonStr); } catch (e) {}
+  }
+}
+
+function importSceneJSON() {
+  var textarea = document.getElementById('json-textarea');
+  if (textarea) {
+    if (textarea.style.display === 'none') {
+      textarea.style.display = 'block';
+      textarea.value = '';
+      textarea.placeholder = 'Paste scene JSON here, then click Load JSON again';
+      textarea.focus();
+      return;
+    }
+
+    var jsonStr = textarea.value.trim();
+    if (!jsonStr) return;
+
+    try {
+      var sceneData = JSON.parse(jsonStr);
+    } catch (e) {
+      alert('Invalid JSON: ' + e.message);
+      return;
+    }
+
+    // Clear existing blocks
+    var idsToRemove = state.blocks.map(function (b) { return b.id; });
+    idsToRemove.forEach(function (id) { removeBlock(id); });
+
+    // Load blocks
+    if (sceneData.blocks && Array.isArray(sceneData.blocks)) {
+      sceneData.blocks.forEach(function (b) {
+        var id = state.nextBlockId++;
+        var block = {
+          id: id,
+          name: b.name || ('Block ' + id),
+          shape: b.shape || 'box',
+          color: b.color || '#808080',
+          position: b.position || { x: 0, y: 0.5, z: 0 },
+          rotation: b.rotation || { x: 0, y: 0, z: 0 },
+          scale: b.scale || { x: 1, y: 1, z: 1 },
+          hasMotion: b.hasMotion || false,
+          endPosition: b.endPosition || { x: b.position.x, y: b.position.y, z: b.position.z },
+          endRotation: b.endRotation || { x: 0, y: 0, z: 0 },
+          mesh: null
+        };
+        block.mesh = createBlockMesh(block);
+        scene.add(block.mesh);
+        state.blocks.push(block);
+      });
+    }
+
+    // Load camera settings
+    if (sceneData.camera) {
+      var presetSel = document.getElementById('camera-preset');
+      if (presetSel && sceneData.camera.preset) presetSel.value = sceneData.camera.preset;
+      var intInput = document.getElementById('camera-intensity');
+      if (intInput && sceneData.camera.intensity) intInput.value = sceneData.camera.intensity;
+      var easingSel = document.getElementById('camera-easing');
+      if (easingSel && sceneData.camera.easing) easingSel.value = sceneData.camera.easing;
+      var intLabel = document.getElementById('intensity-value');
+      if (intLabel) intLabel.textContent = parseFloat(intInput.value).toFixed(1);
+    }
+
+    // Load output settings
+    if (sceneData.output) {
+      if (sceneData.output.width) document.getElementById('output-width').value = sceneData.output.width;
+      if (sceneData.output.height) document.getElementById('output-height').value = sceneData.output.height;
+      if (sceneData.output.frames) document.getElementById('frame-count').value = sceneData.output.frames;
+      if (sceneData.output.fps) document.getElementById('output-fps').value = sceneData.output.fps;
+    }
+
+    updateBlockList();
+    if (state.blocks.length > 0) selectBlock(state.blocks[0].id);
+    textarea.style.display = 'none';
+  }
 }
 
 // ─── Initialization ─────────────────────────────────────────────────
