@@ -1158,12 +1158,235 @@ function setupEventListeners() {
   window.addEventListener('resize', onWindowResize);
 }
 
+// ─── Reference Image Overlay ───────────────────────────────────────
+
+var refImageData = {
+  image: null,        // HTMLImageElement
+  edgeCanvas: null,   // canvas with edge detection result
+  visible: true,
+  edgesVisible: false,
+  opacity: 0.4,
+  edgeThreshold: 30,
+  naturalWidth: 0,
+  naturalHeight: 0
+};
+
+function loadReferenceImage(file) {
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    var img = new Image();
+    img.onload = function () {
+      refImageData.image = img;
+      refImageData.naturalWidth = img.naturalWidth;
+      refImageData.naturalHeight = img.naturalHeight;
+
+      // Auto-set output resolution to match image AR
+      var ar = img.naturalWidth / img.naturalHeight;
+      var outW = parseInt(document.getElementById('output-width').value) || 832;
+      var outH = Math.round(outW / ar);
+      // Ensure even dimensions (needed for video encoding)
+      outH = outH % 2 === 0 ? outH : outH + 1;
+      document.getElementById('output-height').value = outH;
+
+      // Show info
+      var info = document.getElementById('ref-info');
+      if (info) info.textContent = img.naturalWidth + 'x' + img.naturalHeight + ' — output set to ' + outW + 'x' + outH;
+
+      // Show controls
+      var controls = document.getElementById('ref-image-controls');
+      if (controls) controls.style.display = 'block';
+
+      // Compute edge detection
+      computeEdgeDetection();
+
+      // Update viewport overlay
+      updateReferenceOverlay();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearReferenceImage() {
+  refImageData.image = null;
+  refImageData.edgeCanvas = null;
+
+  var overlay = document.getElementById('ref-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    overlay.innerHTML = '';
+  }
+
+  var controls = document.getElementById('ref-image-controls');
+  if (controls) controls.style.display = 'none';
+
+  var fileInput = document.getElementById('ref-image-input');
+  if (fileInput) fileInput.value = '';
+
+  var info = document.getElementById('ref-info');
+  if (info) info.textContent = '';
+}
+
+function updateReferenceOverlay() {
+  var overlay = document.getElementById('ref-overlay');
+  if (!overlay) return;
+
+  if (!refImageData.image || !refImageData.visible) {
+    overlay.style.display = 'none';
+    return;
+  }
+
+  overlay.style.display = 'flex';
+  overlay.innerHTML = '';
+
+  if (refImageData.edgesVisible && refImageData.edgeCanvas) {
+    // Show edge detection canvas
+    var c = refImageData.edgeCanvas;
+    c.style.opacity = refImageData.opacity;
+    overlay.appendChild(c);
+  } else {
+    // Show original image
+    var img = refImageData.image.cloneNode();
+    img.style.opacity = refImageData.opacity;
+    overlay.appendChild(img);
+  }
+}
+
+function computeEdgeDetection() {
+  if (!refImageData.image) return;
+
+  var src = refImageData.image;
+  var threshold = refImageData.edgeThreshold;
+
+  // Draw source to temp canvas at reasonable size (max 1024px wide for performance)
+  var maxW = 1024;
+  var scale = src.naturalWidth > maxW ? maxW / src.naturalWidth : 1;
+  var w = Math.round(src.naturalWidth * scale);
+  var h = Math.round(src.naturalHeight * scale);
+
+  var tmpCanvas = document.createElement('canvas');
+  tmpCanvas.width = w;
+  tmpCanvas.height = h;
+  var tmpCtx = tmpCanvas.getContext('2d');
+  tmpCtx.drawImage(src, 0, 0, w, h);
+
+  var imageData = tmpCtx.getImageData(0, 0, w, h);
+  var pixels = imageData.data;
+
+  // Convert to grayscale luminance array
+  var gray = new Float32Array(w * h);
+  for (var i = 0; i < w * h; i++) {
+    var r = pixels[i * 4];
+    var g = pixels[i * 4 + 1];
+    var b = pixels[i * 4 + 2];
+    gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  // Sobel edge detection
+  var edgeMag = new Float32Array(w * h);
+  var maxMag = 0;
+
+  for (var y = 1; y < h - 1; y++) {
+    for (var x = 1; x < w - 1; x++) {
+      var idx = y * w + x;
+      // Sobel X kernel
+      var gx = -gray[(y-1)*w + (x-1)] + gray[(y-1)*w + (x+1)]
+             - 2*gray[y*w + (x-1)]     + 2*gray[y*w + (x+1)]
+             - gray[(y+1)*w + (x-1)]   + gray[(y+1)*w + (x+1)];
+      // Sobel Y kernel
+      var gy = -gray[(y-1)*w + (x-1)] - 2*gray[(y-1)*w + x] - gray[(y-1)*w + (x+1)]
+             + gray[(y+1)*w + (x-1)]   + 2*gray[(y+1)*w + x] + gray[(y+1)*w + (x+1)];
+
+      var mag = Math.sqrt(gx * gx + gy * gy);
+      edgeMag[idx] = mag;
+      if (mag > maxMag) maxMag = mag;
+    }
+  }
+
+  // Render edges to output canvas (white edges on black)
+  var outCanvas = document.createElement('canvas');
+  outCanvas.width = w;
+  outCanvas.height = h;
+  var outCtx = outCanvas.getContext('2d');
+  var outData = outCtx.createImageData(w, h);
+  var out = outData.data;
+
+  var normalizedThreshold = threshold * maxMag / 100;
+
+  for (var j = 0; j < w * h; j++) {
+    var val = edgeMag[j] > normalizedThreshold ? 255 : 0;
+    out[j * 4] = val;
+    out[j * 4 + 1] = val;
+    out[j * 4 + 2] = val;
+    out[j * 4 + 3] = 255;
+  }
+
+  outCtx.putImageData(outData, 0, 0);
+  refImageData.edgeCanvas = outCanvas;
+}
+
+function setupReferenceImageListeners() {
+  var fileInput = document.getElementById('ref-image-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      if (fileInput.files && fileInput.files[0]) {
+        loadReferenceImage(fileInput.files[0]);
+      }
+    });
+  }
+
+  var opacitySlider = document.getElementById('ref-opacity');
+  var opacityLabel = document.getElementById('ref-opacity-value');
+  if (opacitySlider) {
+    opacitySlider.addEventListener('input', function () {
+      refImageData.opacity = parseInt(opacitySlider.value) / 100;
+      if (opacityLabel) opacityLabel.textContent = refImageData.opacity.toFixed(2);
+      updateReferenceOverlay();
+    });
+  }
+
+  var visibleCheck = document.getElementById('ref-visible');
+  if (visibleCheck) {
+    visibleCheck.addEventListener('change', function () {
+      refImageData.visible = visibleCheck.checked;
+      updateReferenceOverlay();
+    });
+  }
+
+  var edgesCheck = document.getElementById('ref-edges');
+  var edgeControls = document.getElementById('ref-edge-controls');
+  if (edgesCheck) {
+    edgesCheck.addEventListener('change', function () {
+      refImageData.edgesVisible = edgesCheck.checked;
+      if (edgeControls) edgeControls.style.display = edgesCheck.checked ? 'block' : 'none';
+      updateReferenceOverlay();
+    });
+  }
+
+  var edgeThreshold = document.getElementById('ref-edge-threshold');
+  var edgeThresholdLabel = document.getElementById('ref-edge-threshold-value');
+  if (edgeThreshold) {
+    edgeThreshold.addEventListener('input', function () {
+      refImageData.edgeThreshold = parseInt(edgeThreshold.value);
+      if (edgeThresholdLabel) edgeThresholdLabel.textContent = edgeThreshold.value;
+      computeEdgeDetection();
+      updateReferenceOverlay();
+    });
+  }
+
+  var clearBtn = document.getElementById('ref-clear');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearReferenceImage);
+  }
+}
+
 // ─── Initialization ─────────────────────────────────────────────────
 
 function init() {
   initScene();
   createDefaultScene();
   setupEventListeners();
+  setupReferenceImageListeners();
   updateBlockList();
 
   if (state.blocks.length > 1) {

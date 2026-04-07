@@ -8,12 +8,54 @@
 </head>
 <body>
 
+<!-- Reference image overlay (between canvas z:0 and panel z:10) -->
+<div id="ref-overlay" style="display:none;"></div>
+
 <div id="panel">
   <div class="panel-header">
     <h2>Block Scene Motion Builder</h2>
     <div class="view-toggle">
       <button id="view-edit-btn" class="active">Edit</button>
       <button id="view-camera-btn">Camera</button>
+    </div>
+  </div>
+
+  <!-- Reference Image Overlay -->
+  <div class="section">
+    <div class="section-header" data-section="reference">
+      <h3>Reference Image</h3>
+    </div>
+    <div class="section-body" id="section-reference">
+      <div class="input-group">
+        <label for="ref-image-input">Load start frame</label>
+        <input type="file" id="ref-image-input" accept="image/*">
+      </div>
+      <div id="ref-image-controls" style="display:none;">
+        <div class="settings-row">
+          <div class="input-group">
+            <label for="ref-opacity">Opacity: <span id="ref-opacity-value">0.4</span></label>
+            <input type="range" id="ref-opacity" min="0" max="100" step="1" value="40">
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ref-visible" checked>
+          <label for="ref-visible">Show overlay</label>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ref-edges">
+          <label for="ref-edges">Show edge detection</label>
+        </div>
+        <div id="ref-edge-controls" style="display:none;">
+          <div class="input-group">
+            <label for="ref-edge-threshold">Edge sensitivity: <span id="ref-edge-threshold-value">30</span></label>
+            <input type="range" id="ref-edge-threshold" min="5" max="100" step="1" value="30">
+          </div>
+        </div>
+        <div class="settings-row">
+          <button class="btn-small btn-danger" id="ref-clear">Remove image</button>
+        </div>
+        <div class="info-text" id="ref-info"></div>
+      </div>
     </div>
   </div>
 
