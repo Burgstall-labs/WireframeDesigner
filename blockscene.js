@@ -858,9 +858,11 @@ function setViewMode(mode) {
   if (camBtn) camBtn.classList.toggle('active', mode === 'camera');
 }
 
-// ─── Video Export ───────────────────────────────────────────────────
+// ─── Video Export (H.264 MP4) ──────────────────────────────────────
 
-function startExport() {
+var exportBlobUrl = null; // store for download
+
+async function startExport() {
   if (state.isExporting) return;
   state.isExporting = true;
   state.isPlaying = false;
@@ -868,97 +870,113 @@ function startExport() {
   var playBtn = document.getElementById('play-btn');
   if (playBtn) playBtn.textContent = 'Play';
 
-  var outputWidth = parseInt(document.getElementById('output-width').value) || 768;
-  var outputHeight = parseInt(document.getElementById('output-height').value) || 512;
+  // Ensure dimensions are even (H.264 requirement)
+  var outputWidth = parseInt(document.getElementById('output-width').value) || 832;
+  var outputHeight = parseInt(document.getElementById('output-height').value) || 480;
+  outputWidth = outputWidth % 2 === 0 ? outputWidth : outputWidth + 1;
+  outputHeight = outputHeight % 2 === 0 ? outputHeight : outputHeight + 1;
   var fps = parseInt(document.getElementById('output-fps').value) || 24;
-  var frameCount = parseInt(document.getElementById('frame-count').value) || 60;
-
-  var savedWidth = renderer.domElement.width;
-  var savedHeight = renderer.domElement.height;
-  var savedStyleWidth = renderer.domElement.style.width;
-  var savedStyleHeight = renderer.domElement.style.height;
-
-  renderer.setSize(outputWidth, outputHeight);
-  animCamera.aspect = outputWidth / outputHeight;
-  animCamera.updateProjectionMatrix();
-
-  var exportPanel = document.getElementById('export-panel');
-  if (exportPanel) exportPanel.classList.add('visible');
+  var frameCount = parseInt(document.getElementById('frame-count').value) || 81;
 
   var progressFill = document.getElementById('progress-fill');
   var progressInfo = document.getElementById('progress-info');
   if (progressFill) progressFill.style.width = '0%';
-  if (progressInfo) progressInfo.textContent = 'Starting export...';
+  if (progressInfo) progressInfo.textContent = 'Initializing MP4 encoder...';
 
-  var stream = renderer.domElement.captureStream(0);
-  var recorder = new MediaRecorder(stream, {
-    mimeType: 'video/webm;codecs=vp9',
-    videoBitsPerSecond: 8000000
-  });
-
-  var chunks = [];
-  recorder.ondataavailable = function (e) {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-  recorder.onstop = function () {
-    var blob = new Blob(chunks, { type: 'video/webm' });
-    finishExport(blob, savedWidth, savedHeight, savedStyleWidth, savedStyleHeight);
-  };
-
-  recorder.start();
-
-  var frame = 0;
-  function renderExportFrame() {
-    if (frame >= frameCount) {
-      recorder.stop();
-      return;
-    }
-
-    var progress = frameCount <= 1 ? 0 : frame / (frameCount - 1);
-    updateSceneAtProgress(progress);
-    renderer.render(scene, animCamera);
-
-    var track = stream.getVideoTracks()[0];
-    if (track && track.requestFrame) track.requestFrame();
-
-    var pct = Math.round((frame + 1) / frameCount * 100);
-    if (progressFill) progressFill.style.width = pct + '%';
-    if (progressInfo) progressInfo.textContent = 'Exporting frame ' + (frame + 1) + '/' + frameCount;
-
-    frame++;
-    setTimeout(renderExportFrame, 1000 / fps);
+  // Check if HME (h264-mp4-encoder) is available
+  if (typeof HME === 'undefined') {
+    if (progressInfo) progressInfo.textContent = 'Error: h264-mp4-encoder not loaded. Try using a local server.';
+    state.isExporting = false;
+    return;
   }
 
-  setTimeout(renderExportFrame, 100);
+  try {
+    var encoder = await HME.createH264MP4Encoder();
+    encoder.width = outputWidth;
+    encoder.height = outputHeight;
+    encoder.frameRate = fps;
+    encoder.quantizationParameter = 18; // quality: lower = better, 10-51 range
+    encoder.initialize();
+
+    // Resize renderer to output dimensions
+    renderer.setSize(outputWidth, outputHeight);
+    animCamera.aspect = outputWidth / outputHeight;
+    animCamera.updateProjectionMatrix();
+
+    if (progressInfo) progressInfo.textContent = 'Rendering frames...';
+
+    // Use an offscreen canvas to read pixels (avoids preserveDrawingBuffer issues)
+    var readCanvas = document.createElement('canvas');
+    readCanvas.width = outputWidth;
+    readCanvas.height = outputHeight;
+    var readCtx = readCanvas.getContext('2d');
+
+    // Render and encode each frame
+    for (var frame = 0; frame < frameCount; frame++) {
+      var progress = frameCount <= 1 ? 0 : frame / (frameCount - 1);
+      updateSceneAtProgress(progress);
+      renderer.render(scene, animCamera);
+
+      // Copy WebGL canvas to 2D canvas, then get pixel data
+      readCtx.drawImage(renderer.domElement, 0, 0);
+      var imageData = readCtx.getImageData(0, 0, outputWidth, outputHeight);
+      encoder.addFrameRgba(imageData.data);
+
+      var pct = Math.round((frame + 1) / frameCount * 100);
+      if (progressFill) progressFill.style.width = pct + '%';
+      if (progressInfo) progressInfo.textContent = 'Encoding frame ' + (frame + 1) + '/' + frameCount;
+
+      // Yield to browser to update UI
+      if (frame % 5 === 0) {
+        await new Promise(function (resolve) { setTimeout(resolve, 0); });
+      }
+    }
+
+    if (progressInfo) progressInfo.textContent = 'Finalizing MP4...';
+    encoder.finalize();
+
+    var mp4Data = encoder.FS.readFile(encoder.outputFilename);
+    encoder.delete();
+
+    var blob = new Blob([mp4Data], { type: 'video/mp4' });
+    finishExport(blob);
+
+  } catch (err) {
+    console.error('MP4 export error:', err);
+    if (progressInfo) progressInfo.textContent = 'Export error: ' + err.message;
+    state.isExporting = false;
+  }
+
+  // Restore renderer size
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  editCamera.aspect = window.innerWidth / window.innerHeight;
+  editCamera.updateProjectionMatrix();
+  animCamera.aspect = window.innerWidth / window.innerHeight;
+  animCamera.updateProjectionMatrix();
 }
 
-function finishExport(blob, savedWidth, savedHeight, savedStyleWidth, savedStyleHeight) {
-  var url = URL.createObjectURL(blob);
+function finishExport(blob) {
+  // Clean up previous export URL
+  if (exportBlobUrl) URL.revokeObjectURL(exportBlobUrl);
+  exportBlobUrl = URL.createObjectURL(blob);
 
   var exportPanel = document.getElementById('export-panel');
   if (exportPanel) exportPanel.classList.add('visible');
 
   var preview = document.getElementById('export-preview');
   if (preview) {
-    preview.src = url;
+    preview.src = exportBlobUrl;
     preview.style.display = 'block';
   }
-
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  editCamera.aspect = window.innerWidth / window.innerHeight;
-  editCamera.updateProjectionMatrix();
-  animCamera.aspect = window.innerWidth / window.innerHeight;
-  animCamera.updateProjectionMatrix();
 
   state.isExporting = false;
 
   var progressInfo = document.getElementById('progress-info');
-  if (progressInfo) progressInfo.textContent = 'Export complete!';
+  if (progressInfo) progressInfo.textContent = 'Export complete! (' + (blob.size / 1024 / 1024).toFixed(1) + ' MB)';
 }
 
 function downloadExport() {
-  var preview = document.getElementById('export-preview');
-  if (!preview || !preview.src) return;
+  if (!exportBlobUrl) return;
 
   var presetSel = document.getElementById('camera-preset');
   var preset = presetSel ? presetSel.value : 'static';
@@ -966,8 +984,8 @@ function downloadExport() {
   var h = document.getElementById('output-height').value || '480';
 
   var a = document.createElement('a');
-  a.href = preview.src;
-  a.download = 'block-scene-' + preset + '-' + w + 'x' + h + '.webm';
+  a.href = exportBlobUrl;
+  a.download = 'block-scene-' + preset + '-' + w + 'x' + h + '.mp4';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -979,7 +997,6 @@ function closeExportPanel() {
 
   var preview = document.getElementById('export-preview');
   if (preview) {
-    if (preview.src) URL.revokeObjectURL(preview.src);
     preview.src = '';
   }
 }

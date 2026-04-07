@@ -308,14 +308,14 @@
         <input type="checkbox" id="show-grid" checked>
         <label for="show-grid">Show grid in export</label>
       </div>
-      <button id="export-btn" class="btn-success">Export WebM Video</button>
+      <button id="export-btn" class="btn-success">Export MP4 Video</button>
       <div id="progress-info" class="info-text">Ready</div>
       <div id="progress-bar"><div id="progress-fill"></div></div>
     </div>
   </div>
 
   <div class="info-text" style="margin-top:12px; padding-top:8px; border-top:1px solid #3a3a3a;">
-    Build grayscale block scenes with camera motion for LTX 2.3 IC-LoRA conditioning videos. Serve via local web server.
+    Build grayscale block scenes with camera motion for LTX 2.3 IC-LoRA conditioning videos. Works from file:// — no server needed (AI detect may require a local server in some browsers).
   </div>
 </div>
 
@@ -324,7 +324,7 @@
   <h3>Export Preview</h3>
   <video id="export-preview" controls style="max-width:320px; max-height:240px; display:block; margin:0 auto 10px;"></video>
   <a id="export-download" style="display:none;"></a>
-  <button id="download-btn" class="btn-success">Download WebM</button>
+  <button id="download-btn" class="btn-success">Download MP4</button>
   <button id="close-export-btn" class="btn-small">Close</button>
 </div>
 
@@ -338,9 +338,10 @@
   </div>
 </div>
 
-<!-- Three.js and OrbitControls from CDN -->
+<!-- Three.js, OrbitControls, and H264 MP4 Encoder from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/h264-mp4-encoder@1.0.12/embuild/dist/h264-mp4-encoder.web.js"></script>
 <script src="blockscene.js"></script>
 </body>
 </html>
