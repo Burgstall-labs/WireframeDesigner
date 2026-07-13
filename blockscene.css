@@ -170,6 +170,13 @@ h2 {
   border: 1px solid #3a3a3a;
   border-radius: 6px;
   overflow: hidden;
+  /* Panel is a fixed-height flex column: without this, sections get
+     squeezed to fit the viewport instead of letting the panel scroll. */
+  flex-shrink: 0;
+}
+
+.panel-header {
+  flex-shrink: 0;
 }
 
 .section-header {
@@ -179,6 +186,7 @@ h2 {
   padding: 10px 12px;
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
   transition: background 0.15s;
 }
 
@@ -376,6 +384,7 @@ button {
   justify-content: center;
   gap: 6px;
   height: 32px;
+  touch-action: manipulation;
   padding: 0 14px;
   background: #5b9bd5;
   color: #fff;
@@ -713,4 +722,40 @@ label {
   font-size: 11px;
   color: #999;
   font-weight: 500;
+}
+
+/* --- Touch Devices --- */
+
+/* No hover on touch screens: keep per-block action buttons visible. */
+@media (hover: none) {
+  .block-item .btn-icon {
+    opacity: 1;
+  }
+}
+
+/* --- Mobile Layout --- */
+
+@media (max-width: 700px) {
+  /* Panel becomes a scrollable bottom sheet so the 3D view stays visible
+     on top, with the timeline pinned below it. */
+  #panel {
+    top: auto;
+    bottom: 48px;
+    width: 100%;
+    height: 48vh;
+    height: 48dvh;
+    border-right: none;
+    border-top: 1px solid #3a3a3a;
+    padding: 12px;
+  }
+
+  #timeline {
+    left: 0;
+  }
+
+  #export-panel {
+    width: auto;
+    left: 12px;
+    right: 12px;
+  }
 }
