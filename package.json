@@ -1,0 +1,120 @@
+{
+  "name": "wireframe-designer",
+  "version": "1.0.0",
+  "description": "A simple browser-based tool to create rotating wireframe animations of basic 3D shapes and export them as animated GIFs or WebM videos.",
+  "main": "electron-main.js",
+  "homepage": "./",
+  "author": "Wireframe Designer Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Burgstall-labs/WireframeDesigner.git"
+  },
+  "keywords": [
+    "wireframe",
+    "animation",
+    "3d",
+    "gif",
+    "webm",
+    "three.js",
+    "electron"
+  ],
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder --win --linux",
+    "package": "electron-builder --publish=never",
+    "package:win": "electron-builder --win --publish=never",
+    "package:linux": "electron-builder --linux --publish=never",
+    "dist": "npm run package:win && npm run package:linux",
+    "clean": "rimraf dist build",
+    "serve": "python -m http.server 8000",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4",
+    "rimraf": "^5.0.5"
+  },
+  "dependencies": {
+    "three": "^0.157.0"
+  },
+  "build": {
+    "appId": "com.wireframedesigner.app",
+    "productName": "Wireframe Designer",
+    "copyright": "Copyright © 2024 Wireframe Designer Team",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build-resources"
+    },
+    "files": [
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "gif.js",
+      "gif.worker.js",
+      "electron-main.js",
+      "electron-preload.js",
+      "!node_modules/**/*",
+      "!src/**/*",
+      "!.git/**/*",
+      "!.cursor/**/*",
+      "!wireframedesigner.html"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build-resources/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build-resources/icon.png",
+      "category": "Graphics",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Wireframe Designer",
+      "runAfterFinish": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

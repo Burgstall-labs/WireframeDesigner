@@ -1,0 +1,74 @@
+---
+description: Best practices for Tailwind CSS v4+ implementation and optimization
+globs: **/*.{js,jsx,ts,tsx}, tailwind.config.{js,ts}, **/*.css
+---
+
+# Tailwind Version Rule
+
+// Description: Best practices for Tailwind CSS v4+ implementation and optimization
+// Recommended Globs: **/*.{js,jsx,ts,tsx}, tailwind.config.{js,ts}, **/*.css
+
+## Code Style and Structure
+- Use Tailwind CSS version 4.0 or higher
+- Avoid legacy Tailwind classes that were removed in version 4.0
+- Ensure class names and utility usage align with Tailwind 4+ best practices
+
+## Tailwind CSS Rules
+- Use JIT mode for optimized builds
+- Avoid deprecated utility classes from older Tailwind versions
+- Use the new color system introduced in Tailwind 4+
+- Follow mobile-first design principles
+- Prefer grouping utilities for cleaner class structures
+
+## Naming Conventions
+- Use kebab-case for custom utility classes
+- Prefer `data-` attributes over `className` overrides for state-based styling
+
+## React Best Practices
+- Use Tailwind classes directly within JSX without abstraction unless necessary
+- Extract repeated class combinations into reusable components
+- Avoid excessive nesting of elements when styling can be achieved with Tailwind utilities
+- Use React's `useMemo` and `useCallback` to optimize component re-renders when applying dynamic Tailwind classes
+
+## State Management
+- Use state management solutions like Zustand to toggle Tailwind-based UI states
+- Ensure class toggling is efficient and avoids unnecessary re-renders
+
+## UI and Styling
+- Use Tailwind utility classes for layout, spacing, and common styles
+- Avoid custom CSS unless Tailwind utilities are insufficient
+- Use CSS modules or inline styles only for rare edge cases that Tailwind cannot cover
+- Follow responsive design best practices using Tailwind's `sm`, `md`, `lg`, `xl`, and `2xl` breakpoints
+
+## Performance Optimization
+- Use Tailwind's built-in PurgeCSS to remove unused styles in production
+- Optimize class combinations to minimize unnecessary style computations
+- Avoid unnecessary `useState` or `useEffect` for class toggling; prefer `useMemo` where applicable
+- Use lazy loading and code splitting to improve UI performance
+
+## Forms and Validation
+- Use Tailwind form classes to maintain consistent styling
+- Ensure accessible and responsive form layouts using Tailwind's grid or flex utilities
+- Implement client-side validation with controlled components and Tailwind's form feedback utilities
+
+## Accessibility (a11y)
+- Use Tailwind's `sr-only` class for hidden but accessible text
+- Ensure proper contrast ratios using Tailwind's built-in color utilities
+- Use focus-visible utilities to enhance keyboard navigation
+
+## Testing
+- Ensure UI snapshots remain consistent with Tailwind class-based styles
+- Test class-based conditional rendering using Jest and React Testing Library
+- Validate accessibility compliance using automated a11y testing tools
+
+## Security
+- Avoid using `dangerouslySetInnerHTML` with Tailwind classes unless necessary
+- Sanitize any dynamic Tailwind class concatenation to prevent injection attacks
+
+## Internationalization (i18n)
+- Ensure RTL compatibility using Tailwind's `rtl` variant when needed
+
+## Key Conventions
+- Optimize Web Vitals by keeping Tailwind styles lean and efficient
+- Balance readability and performance when applying multiple utility classes
+- Always use the latest Tailwind features and remove deprecated syntax when upgrading

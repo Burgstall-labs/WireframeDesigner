@@ -1,0 +1,276 @@
+---
+description: Modern Android development practices using Jetpack Compose and clean architecture
+globs: **/*.kt, **/build.gradle.kts, **/AndroidManifest.xml
+---
+
+# Jetpack Compose
+
+// Description: Modern Android development practices using Jetpack Compose and clean architecture
+// Recommended Globs: **/*.kt, **/build.gradle.kts, **/AndroidManifest.xml
+
+## Project Structure
+```
+app/
+  src/
+    main/
+      java/com/package/
+        data/
+          repository/
+          datasource/
+          models/
+        domain/
+          usecases/
+          models/
+          repository/
+        presentation/
+          screens/
+          components/
+          theme/
+          viewmodels/
+        di/
+        utils/
+      res/
+        values/
+        drawable/
+        mipmap/
+    test/
+    androidTest/
+```
+
+## UI Component Structure
+```kotlin
+@Composable
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    HomeContent(
+        uiState = uiState,
+        onAction = viewModel::handleAction,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun HomeContent(
+    uiState: HomeUiState,
+    onAction: (HomeAction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        when (uiState) {
+            is HomeUiState.Loading -> {
+                item { LoadingIndicator() }
+            }
+            is HomeUiState.Success -> {
+                items(
+                    items = uiState.items,
+                    key = { it.id }
+                ) { item ->
+                    ItemCard(
+                        item = item,
+                        onClick = { onAction(HomeAction.ItemClicked(item)) }
+                    )
+                }
+            }
+            is HomeUiState.Error -> {
+                item { ErrorMessage(message = uiState.message) }
+            }
+        }
+    }
+}
+```
+
+## ViewModel Pattern
+```kotlin
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val getItems: GetItemsUseCase
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    val uiState = _uiState.asStateFlow()
+
+    init {
+        loadItems()
+    }
+
+    fun handleAction(action: HomeAction) {
+        when (action) {
+            is HomeAction.ItemClicked -> navigateToDetail(action.item)
+            is HomeAction.Refresh -> loadItems()
+        }
+    }
+
+    private fun loadItems() {
+        viewModelScope.launch {
+            getItems()
+                .onStart { _uiState.value = HomeUiState.Loading }
+                .catch { e -> _uiState.value = HomeUiState.Error(e.message) }
+                .collect { items ->
+                    _uiState.value = HomeUiState.Success(items)
+                }
+        }
+    }
+}
+```
+
+## Theme Implementation
+```kotlin
+@Composable
+fun AppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context)
+            else dynamicLightColorScheme(context)
+        }
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        shapes = Shapes,
+        content = content
+    )
+}
+```
+
+## Navigation Setup
+```kotlin
+@Composable
+fun AppNavigation(
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = Screen.Home.route
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                onNavigateToDetail = { itemId ->
+                    navController.navigate(Screen.Detail.createRoute(itemId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+        ) {
+            DetailScreen(onNavigateUp = { navController.navigateUp() })
+        }
+    }
+}
+```
+
+## Reusable Components
+```kotlin
+@Composable
+fun ItemCard(
+    item: Item,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        elevation = CardDefaults.cardElevation()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AsyncImage(
+                model = item.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(MaterialTheme.shapes.small)
+                contentScale = ContentScale.Crop
+            )
+
+            Column {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = item.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+```
+
+## Testing
+```kotlin
+@HiltAndroidTest
+class HomeScreenTest {
+    @get:Rule
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun homeScreen_DisplaysItems() {
+        composeTestRule.setContent {
+            AppTheme {
+                HomeScreen()
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText("Item Title")
+            .assertIsDisplayed()
+    }
+}
+```
+
+## Best Practices
+
+### Composable Functions
+- Keep composables small and focused
+- Use proper state hoisting
+- Follow proper naming conventions
+- Implement proper preview annotations
+
+### State Management
+- Use proper state holders
+- Implement unidirectional data flow
+- Handle configuration changes
+- Use proper state restoration
+
+### Performance
+- Minimize recomposition
+- Use proper keys in lists
+- Implement proper lazy loading
+- Use proper image loading
+
+### Accessibility
+- Add proper content descriptions
+- Support dynamic text sizing
+- Implement proper touch targets
+- Use proper semantic properties
+
+## Resources
+- [Jetpack Compose Documentation](https://developer.android.com/jetpack/compose)
+- [Material Design 3](https://m3.material.io)
+- [Compose Testing](https://developer.android.com/jetpack/compose/testing)
+- [Compose Performance](https://developer.android.com/jetpack/compose/performance)

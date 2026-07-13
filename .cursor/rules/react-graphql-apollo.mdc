@@ -1,0 +1,237 @@
+---
+description: Best practices for React development with GraphQL and Apollo Client
+globs: **/*.{ts,tsx}, **/graphql/**/*.{ts,graphql}, **/hooks/**/*.ts
+---
+
+# React GraphQL Apollo
+
+// Description: Best practices for React development with GraphQL and Apollo Client
+// Recommended Globs: **/*.{ts,tsx}, **/graphql/**/*.{ts,graphql}, **/hooks/**/*.ts
+
+## Project Structure
+```
+src/
+  components/
+    common/
+    features/
+  graphql/
+    queries/
+    mutations/
+    fragments/
+  hooks/
+    useQuery/
+    useMutation/
+  pages/
+  utils/
+  App.tsx
+  index.tsx
+```
+
+## Apollo Client Setup
+```typescript
+// src/apollo/client.ts
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+
+export const client = new ApolloClient({
+  uri: process.env.REACT_APP_GRAPHQL_URL,
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          // Custom field policies here
+        }
+      }
+    }
+  })
+});
+
+// src/App.tsx
+import { ApolloProvider } from '@apollo/client';
+import { client } from './apollo/client';
+
+export function App() {
+  return (
+    <ApolloProvider client={client}>
+      {/* App content */}
+    </ApolloProvider>
+  );
+}
+```
+
+## Query Components
+```typescript
+// src/components/features/UserList/UserList.tsx
+import { useQuery } from '@apollo/client';
+import { GET_USERS } from '../../graphql/queries/users';
+
+export function UserList() {
+  const { data, loading, error } = useQuery(GET_USERS);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <ul>
+      {data.users.map(user => (
+        <UserListItem key={user.id} user={user} />
+      ))}
+    </ul>
+  );
+}
+```
+
+## Custom Hooks
+```typescript
+// src/hooks/useQuery/useUsers.ts
+import { useQuery } from '@apollo/client';
+import { GET_USERS } from '../../graphql/queries/users';
+
+export function useUsers(options?: QueryOptions) {
+  const { data, loading, error } = useQuery(GET_USERS, options);
+
+  return {
+    users: data?.users ?? [],
+    loading,
+    error
+  };
+}
+
+// src/hooks/useMutation/useUpdateUser.ts
+import { useMutation } from '@apollo/client';
+import { UPDATE_USER } from '../../graphql/mutations/users';
+
+export function useUpdateUser() {
+  const [updateUser, { loading, error }] = useMutation(UPDATE_USER, {
+    update(cache, { data: { updateUser } }) {
+      cache.modify({
+        fields: {
+          users(existingUsers = []) {
+            const newUserRef = cache.writeFragment({
+              data: updateUser,
+              fragment: USER_FRAGMENT
+            });
+            return [...existingUsers, newUserRef];
+          }
+        }
+      });
+    }
+  });
+
+  return {
+    updateUser,
+    loading,
+    error
+  };
+}
+```
+
+## GraphQL Operations
+```typescript
+// src/graphql/fragments/user.ts
+import { gql } from '@apollo/client';
+
+export const USER_FRAGMENT = gql`
+  fragment UserFields on User {
+    id
+    name
+    email
+    avatar
+  }
+`;
+
+// src/graphql/queries/users.ts
+import { gql } from '@apollo/client';
+
+export const GET_USERS = gql`
+  query GetUsers {
+    users {
+      ...UserFields
+    }
+  }
+  ${USER_FRAGMENT}
+`;
+
+// src/graphql/mutations/users.ts
+import { gql } from '@apollo/client';
+
+export const UPDATE_USER = gql`
+  mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+    updateUser(id: $id, input: $input) {
+      ...UserFields
+    }
+  }
+  ${USER_FRAGMENT}
+`;
+```
+
+## Error Boundaries
+```typescript
+// src/components/common/ErrorBoundary.tsx
+import { Component, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? (
+        <div>Something went wrong. Please try again later.</div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Best Practices
+
+### Component Structure
+- Use functional components with hooks
+- Implement proper loading and error states
+- Use TypeScript for type safety
+- Keep components focused and reusable
+
+### GraphQL Operations
+- Use fragments for reusable query parts
+- Implement proper caching strategies
+- Handle optimistic updates
+- Use proper naming conventions
+
+### State Management
+- Utilize Apollo Client for global state
+- Implement local state when needed
+- Use proper cache policies
+- Handle offline support
+
+### Performance
+- Implement proper query batching
+- Use field-level caching
+- Optimize bundle size
+- Use proper fetch policies
+
+### Development Tools
+- Use Apollo Client DevTools
+- Implement proper logging
+- Use GraphQL CodeGen
+- Implement proper testing
+
+## Resources
+- [Apollo Client Documentation](https://www.apollographql.com/docs/react/)
+- [React Documentation](https://reactjs.org/docs/getting-started.html)
+- [GraphQL Documentation](https://graphql.org/learn/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
